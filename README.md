@@ -1,4 +1,4 @@
-# Go Declarative Testing - Kubernetes ![go test workflow](https://github.com/gdt-dev/kube/actions/workflows/gate-tests.yml/badge.svg)
+# Go Declarative Testing - Kubernetes
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gdt-dev/kube.svg)](https://pkg.go.dev/github.com/gdt-dev/kube)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gdt-dev/kube)](https://goreportcard.com/report/github.com/gdt-dev/kube)

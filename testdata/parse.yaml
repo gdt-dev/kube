@@ -1,0 +1,37 @@
+name: parse
+description: a scenario with several well-formed kube test specs
+tests:
+ - name: create a pod from YAML using kube.create shortcut
+   kube.create: |
+     apiVersion: v1
+     kind: Pod
+     metadata:
+       name: nginx
+     spec:
+       containers:
+        - name: nginx
+          image: nginx:1.7.9
+ - name: apply a pod from a file using kube.apply shortcut
+   kube.apply: testdata/manifests/nginx-pod.yaml
+ - name: create a pod from YAML
+   kube:
+     create: |
+       apiVersion: v1
+       kind: Pod
+       metadata:
+         name: nginx
+       spec:
+         containers:
+          - name: nginx
+            image: nginx:1.7.9
+ - name: delete a pod from a file
+   kube:
+     delete: testdata/manifests/nginx-pod.yaml
+ - name: fetch a pod via kube.get shortcut
+   kube.get: pods/name
+ - name: fetch a pod via long-form kube:get
+   kube:
+     get: pods/name
+ - name: fetch a pod with envvar substitution
+   kube:
+     get: pods/${pod_name}

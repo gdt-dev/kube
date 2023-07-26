@@ -1,0 +1,8 @@
+name: defaults-config-not-found
+description: invalid defaults specifying config path that does not exist
+defaults:
+  kube:
+    config: path/does/not/exist.yaml
+tests:
+ - kube:
+     create: testdata/pod.yaml

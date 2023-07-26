@@ -1,0 +1,7 @@
+name: bad-matches-file-not-found
+description: matches refers to unknown file
+tests:
+ - kube:
+     get: pods/mypod
+     assert:
+       matches: does/not/exist.yaml

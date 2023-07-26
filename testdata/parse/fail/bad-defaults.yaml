@@ -1,0 +1,7 @@
+name: bad-defaults
+description: invalid defaults (expected map, not scalar)
+defaults:
+  kube: foo
+tests:
+ - kube:
+     create: testdata/pod.yaml

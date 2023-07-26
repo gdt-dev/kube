@@ -1,0 +1,7 @@
+name: bad-matches-invalid-yaml
+description: matches contains invalid YAML
+tests:
+ - kube:
+     get: pods/mypod
+     assert:
+       matches: :this-is-not-valid!YAML

@@ -1,0 +1,7 @@
+name: delete-file-not-found
+description: delete filepath not found
+require:
+  - kind
+tests:
+ - kube:
+     delete: testdata/doesnotexist.yaml

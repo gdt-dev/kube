@@ -1,0 +1,9 @@
+name: delete-resource-not-found
+description: delete resource not found
+require:
+  - kind
+tests:
+ - kube:
+     delete: pods/doesnotexist
+     assert:
+       notfound: true

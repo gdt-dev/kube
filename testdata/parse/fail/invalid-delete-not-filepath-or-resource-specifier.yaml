@@ -1,0 +1,12 @@
+name: delete-not-filepath-or-resource-specifier
+description: invalid spec contains YAML string for the delete resource specifier
+require:
+  - kind
+tests:
+ - name: invalid-delete-not-filepath-or-resource-specifier
+   kube:
+     delete: |
+       apiVersion: does.not.exist/v1
+       kind: unknown
+       metadata:
+         name: unknown

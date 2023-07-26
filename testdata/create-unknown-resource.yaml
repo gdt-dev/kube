@@ -1,0 +1,13 @@
+name: create-unknown-resource
+description: create with YAML for unknown resource
+require:
+  - kind
+tests:
+ - kube:
+     create: |
+       apiVersion: does.not.exist/v1
+       kind: unknown
+       metadata:
+         name: unknown
+     assert:
+       unknown: true

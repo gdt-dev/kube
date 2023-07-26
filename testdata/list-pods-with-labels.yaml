@@ -1,0 +1,27 @@
+name: list-pods-with-labels
+description: test list of Pod resources using label selector
+require:
+  - kind
+tests:
+  - name: create-deployment
+    kube:
+      create: testdata/manifests/nginx-deployment.yaml
+  - name: verify-pods-with-app-nginx-label
+    kube:
+      get: pods
+      with:
+        labels:
+          app: nginx
+      assert:
+        len: 2
+  - name: verify-no-pods-with-app-noexist-label
+    kube:
+      get: pods
+      with:
+        labels:
+          app: noexist
+      assert:
+        len: 0
+  - name: delete-deployment
+    kube:
+      delete: deployments/nginx

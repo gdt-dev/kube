@@ -1,0 +1,6 @@
+name: more-than-one-kube-action
+description: invalid kube spec with more than one Kubernetes action in kube field
+tests:
+ - kube:
+     create: testdata/pod.yaml
+     apply: testdata/pod.yaml

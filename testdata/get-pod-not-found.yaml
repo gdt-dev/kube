@@ -1,0 +1,15 @@
+name: get-pod-not-found
+description: test getting a single non-existent Pod resource
+require:
+  - kind
+tests:
+  - name: assert-len-zero
+    kube:
+      get: pods/doesnotexist
+      assert:
+        len: 0
+  - name: assert-not-found
+    kube:
+      get: pods/doesnotexist
+      assert:
+        notfound: true

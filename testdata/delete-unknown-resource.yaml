@@ -1,0 +1,9 @@
+name: delete-unknown-resource
+description: delete with YAML for unknown resource
+require:
+  - kind
+tests:
+ - kube:
+     delete: unknown/unknown
+     assert:
+       unknown: true

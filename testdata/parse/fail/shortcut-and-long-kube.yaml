@@ -1,0 +1,7 @@
+name: shortcut-and-long-kube
+description: invalid kube spec with both shortcut and long-form kube
+tests:
+ - kube.create: testdata/pod.yaml
+   # The kube object is redundant when there is a kube.create shortcut
+   kube:
+     create: testdata/pod.yaml

@@ -1,0 +1,10 @@
+name: list-pods-empty
+description: test empty list of Pod resources
+require:
+  - kind
+tests:
+  - name: verify-no-pods
+    kube:
+      get: pods
+      assert:
+        len: 0

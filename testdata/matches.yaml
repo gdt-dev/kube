@@ -1,0 +1,26 @@
+name: matches
+description: create a deployment and check the matches condition succeeds
+require:
+  - kind
+tests:
+  - name: create-deployment
+    kube:
+      create: testdata/manifests/nginx-deployment.yaml
+  - name: deployment-matches-expected-fields
+    timeout:
+      after: 20s
+    kube:
+      get: deployments/nginx
+      assert:
+        matches:
+          spec:
+            replicas: 2
+            template:
+              metadata:
+                labels:
+                  app: nginx
+          status:
+            readyReplicas: 2
+  - name: delete-deployment
+    kube:
+      delete: deployments/nginx

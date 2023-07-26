@@ -1,0 +1,7 @@
+name: bad-matches-not-map-any
+description: "matches is not a string or map[string]interface{}"
+tests:
+ - kube:
+     get: pods/mypod
+     assert:
+       matches: 42

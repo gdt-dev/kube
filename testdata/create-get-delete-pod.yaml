@@ -1,0 +1,19 @@
+name: create-get-delete-pod
+description: create, get and delete a Pod
+require:
+  - kind
+tests:
+  - name: create-pod
+    kube:
+      create: testdata/manifests/nginx-pod.yaml
+  - name: pod-exists
+    kube:
+      get: pods/nginx
+  - name: delete-pod
+    kube:
+      delete: pods/nginx
+  - name: pod-no-longer-exists
+    kube:
+      get: pods/nginx
+      assert:
+        notfound: true

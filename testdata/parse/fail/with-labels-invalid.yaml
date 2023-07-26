@@ -1,0 +1,9 @@
+name: with-labels-invalid
+description: invalid label selector specified
+tests:
+ - kube:
+     get: pods
+     with:
+       labels:
+         -app: nginx
+         _env: _qa_

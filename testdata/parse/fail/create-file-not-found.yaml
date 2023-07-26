@@ -1,0 +1,7 @@
+name: create-file-not-found
+description: create filepath not found
+require:
+  - kind
+tests:
+ - kube:
+     create: testdata/doesnotexist.yaml

@@ -1,0 +1,11 @@
+name: invalid-resource-specifier-multiple-resources
+description: invalid spec that shows an invalid resource specifier for `get` using spaces to indicate multiple resources
+require:
+  - kind
+tests:
+  - kube:
+      # a resource specifier is either a resource kind or alias, e.g. "pods" or
+      # "po", or a string in the form of "{kind}/{name}". Spaces and commas are
+      # not allowed in a resource identifier and only a single forward slash is
+      # permitted, indicating the boundary between kind and name.
+      get: pods/invalid/name

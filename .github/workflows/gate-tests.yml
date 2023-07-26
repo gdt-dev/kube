@@ -30,10 +30,10 @@ jobs:
        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
        with:
          go-version: ${{ matrix.go }}
-    - name: run non-Kind tests
-      env:
-        SKIP_KIND: 1
-      run: go test -v ./...
+     - name: run non-Kind tests
+       env:
+         SKIP_KIND: 1
+       run: go test -v ./...
   test-all:
     strategy:
       matrix:
@@ -54,9 +54,9 @@ jobs:
        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
        with:
          go-version: ${{ matrix.go }}
-    - name: create KinD cluster
-      uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
-      with:
-        cluster_name: kind
-    - name: run all tests
-      run: go test -v ./...
+     - name: create KinD cluster
+       uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
+       with:
+         cluster_name: kind
+     - name: run all tests
+       run: go test -v ./...

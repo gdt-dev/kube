@@ -6,10 +6,10 @@ tests:
   - name: assert-len-zero
     kube:
       get: pods/doesnotexist
-      assert:
-        len: 0
+    assert:
+      len: 0
   - name: assert-not-found
     kube:
       get: pods/doesnotexist
-      assert:
-        notfound: true
+    assert:
+      notfound: true

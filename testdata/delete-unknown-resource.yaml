@@ -5,5 +5,5 @@ fixtures:
 tests:
  - kube:
      delete: unknown/unknown
-     assert:
-       unknown: true
+   assert:
+     unknown: true

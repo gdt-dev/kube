@@ -3,5 +3,5 @@ description: "matches is not a string or map[string]interface{}"
 tests:
  - kube:
      get: pods/mypod
-     assert:
-       matches: 42
+   assert:
+     matches: 42

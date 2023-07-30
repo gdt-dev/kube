@@ -6,5 +6,5 @@ tests:
   - name: verify-no-pods
     kube:
       get: pods
-      assert:
-        len: 0
+    assert:
+      len: 0

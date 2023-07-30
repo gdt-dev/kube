@@ -12,16 +12,16 @@ tests:
       with:
         labels:
           app: nginx
-      assert:
-        len: 2
+    assert:
+      len: 2
   - name: verify-no-pods-with-app-noexist-label
     kube:
       get: pods
       with:
         labels:
           app: noexist
-      assert:
-        len: 0
+    assert:
+      len: 0
   - name: delete-deployment
     kube:
       delete: deployments/nginx

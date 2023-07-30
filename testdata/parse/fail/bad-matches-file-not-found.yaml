@@ -3,5 +3,5 @@ description: matches refers to unknown file
 tests:
  - kube:
      get: pods/mypod
-     assert:
-       matches: does/not/exist.yaml
+   assert:
+     matches: does/not/exist.yaml

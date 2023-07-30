@@ -11,10 +11,10 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          status:
-            readyReplicas: 2
+    assert:
+      matches:
+        status:
+          readyReplicas: 2
   - name: apply-deployment-change
     kube:
       apply: |
@@ -29,10 +29,10 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          status:
-            readyReplicas: 1
+    assert:
+      matches:
+        status:
+          readyReplicas: 1
   - name: delete-deployment
     kube:
       delete: deployments/nginx

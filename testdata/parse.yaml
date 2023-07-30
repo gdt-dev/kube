@@ -35,3 +35,5 @@ tests:
  - name: fetch a pod with envvar substitution
    kube:
      get: pods/${pod_name}
+   assert:
+     len: 0

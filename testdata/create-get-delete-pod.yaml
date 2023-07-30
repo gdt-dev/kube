@@ -15,5 +15,5 @@ tests:
   - name: pod-no-longer-exists
     kube:
       get: pods/nginx
-      assert:
-        notfound: true
+    assert:
+      notfound: true

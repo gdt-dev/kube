@@ -9,5 +9,5 @@ tests:
        kind: unknown
        metadata:
          name: unknown
-     assert:
-       unknown: true
+   assert:
+     unknown: true

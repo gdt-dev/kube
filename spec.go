@@ -85,11 +85,6 @@ type KubeSpec struct {
 	//          app: nginx
 	// ```
 	With *With `yaml:"with,omitempty"`
-	// Assert houses the various assertions to be made about the kube client
-	// call (Create, Apply, Get, etc)
-	// TODO(jaypipes): Make this polymorphic to be either a single assertion
-	// struct or a list of assertion structs
-	Assert *Expect `yaml:"assert,omitempty"`
 }
 
 // Spec describes a test of a *single* Kubernetes API request and response.
@@ -133,6 +128,11 @@ type Spec struct {
 	//     having such a label.
 	//   * the string `--all` to delete all resources of that kind.
 	KubeDelete string `yaml:"kube.delete,omitempty"`
+	// Assert houses the various assertions to be made about the kube client
+	// call (Create, Apply, Get, etc)
+	// TODO(jaypipes): Make this polymorphic to be either a single assertion
+	// struct or a list of assertion structs
+	Assert *Expect `yaml:"assert,omitempty"`
 }
 
 // Title returns a good name for the Spec

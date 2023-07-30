@@ -240,6 +240,7 @@ spec:
    - name: nginx
      image: nginx:1.7.9
 `
+	var zero int
 
 	expTests := []gdttypes.Evaluable{
 		&gdtkube.Spec{
@@ -313,6 +314,9 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Get: "pods/foo",
+			},
+			Assert: &gdtkube.Expect{
+				Len: &zero,
 			},
 		},
 	}

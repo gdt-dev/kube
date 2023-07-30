@@ -11,16 +11,16 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          spec:
-            replicas: 2
-            template:
-              metadata:
-                labels:
-                  app: nginx
-          status:
-            readyReplicas: 2
+    assert:
+      matches:
+        spec:
+          replicas: 2
+          template:
+            metadata:
+              labels:
+                app: nginx
+        status:
+          readyReplicas: 2
   - name: delete-deployment
     kube:
       delete: deployments/nginx

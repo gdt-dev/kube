@@ -58,6 +58,15 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 				return errors.ExpectedScalarAt(valNode)
 			}
 			s.KubeDelete = valNode.Value
+		case "assert":
+			if valNode.Kind != yaml.MappingNode {
+				return errors.ExpectedMapAt(valNode)
+			}
+			var e *Expect
+			if err := valNode.Decode(&e); err != nil {
+				return err
+			}
+			s.Assert = e
 		default:
 			if lo.Contains(gdttypes.BaseSpecFields, key) {
 				continue
@@ -189,8 +198,8 @@ func validateKubeSpec(s *Spec) error {
 			}
 		}
 	}
-	if s.Kube.Assert != nil {
-		exp := s.Kube.Assert
+	if s.Assert != nil {
+		exp := s.Assert
 		if exp.Matches != nil {
 			if err := validateMatches(exp.Matches); err != nil {
 				return err

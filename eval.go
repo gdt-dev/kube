@@ -77,7 +77,7 @@ func (s *Spec) get(
 		Kind: kind,
 	}
 	res, err := c.gvrFromGVK(gvk)
-	a := newAssertions(s.Kube.Assert, err, nil)
+	a := newAssertions(s.Assert, err, nil)
 	if !a.OK() {
 		return result.New(result.WithFailures(a.Failures()...))
 	}
@@ -145,7 +145,7 @@ func (s *Spec) doList(
 	list, err := c.client.Resource(res).Namespace(namespace).List(
 		ctx, opts,
 	)
-	return newAssertions(s.Kube.Assert, err, list)
+	return newAssertions(s.Assert, err, list)
 }
 
 // doGet performs the Get() call and assertion check for a supplied resource
@@ -163,7 +163,7 @@ func (s *Spec) doGet(
 		name,
 		metav1.GetOptions{},
 	)
-	return newAssertions(s.Kube.Assert, err, obj)
+	return newAssertions(s.Assert, err, obj)
 }
 
 // splitKindName returns the Kind for a supplied `Get` or `Delete` command
@@ -212,7 +212,7 @@ func (s *Spec) create(
 			ns = s.Namespace()
 		}
 		res, err := c.gvrFromGVK(gvk)
-		a := newAssertions(s.Kube.Assert, err, nil)
+		a := newAssertions(s.Assert, err, nil)
 		if !a.OK() {
 			return result.New(result.WithFailures(a.Failures()...))
 		}
@@ -225,7 +225,7 @@ func (s *Spec) create(
 		// object that was created, which is wrong. When I add the polymorphism
 		// to the Assertions struct, I will modify this block to look for an
 		// indexed set of error assertions.
-		a = newAssertions(s.Kube.Assert, err, obj)
+		a = newAssertions(s.Assert, err, obj)
 		return result.New(result.WithFailures(a.Failures()...))
 	}
 	return nil
@@ -269,7 +269,7 @@ func (s *Spec) apply(
 			ns = s.Namespace()
 		}
 		res, err := c.gvrFromGVK(gvk)
-		a := newAssertions(s.Kube.Assert, err, nil)
+		a := newAssertions(s.Assert, err, nil)
 		if !a.OK() {
 			return result.New(result.WithFailures(a.Failures()...))
 		}
@@ -289,7 +289,7 @@ func (s *Spec) apply(
 		// object that was applied, which is wrong. When I add the polymorphism
 		// to the Assertions struct, I will modify this block to look for an
 		// indexed set of error assertions.
-		a = newAssertions(s.Kube.Assert, err, obj)
+		a = newAssertions(s.Assert, err, obj)
 		return result.New(result.WithFailures(a.Failures()...))
 	}
 	return nil
@@ -353,7 +353,7 @@ func (s *Spec) delete(
 		for _, obj := range objs {
 			gvk := obj.GetObjectKind().GroupVersionKind()
 			res, err := c.gvrFromGVK(gvk)
-			a := newAssertions(s.Kube.Assert, err, nil)
+			a := newAssertions(s.Assert, err, nil)
 			if !a.OK() {
 				return result.New(result.WithFailures(a.Failures()...))
 			}
@@ -379,7 +379,7 @@ func (s *Spec) delete(
 		Kind: kind,
 	}
 	res, err := c.gvrFromGVK(gvk)
-	a := newAssertions(s.Kube.Assert, err, nil)
+	a := newAssertions(s.Assert, err, nil)
 	if !a.OK() {
 		return result.New(result.WithFailures(a.Failures()...))
 	}
@@ -404,7 +404,7 @@ func (s *Spec) doDelete(
 		name,
 		metav1.DeleteOptions{},
 	)
-	a := newAssertions(s.Kube.Assert, err, nil)
+	a := newAssertions(s.Assert, err, nil)
 	return result.New(result.WithFailures(a.Failures()...))
 }
 
@@ -422,6 +422,6 @@ func (s *Spec) doDeleteCollection(
 		metav1.DeleteOptions{},
 		metav1.ListOptions{},
 	)
-	a := newAssertions(s.Kube.Assert, err, nil)
+	a := newAssertions(s.Assert, err, nil)
 	return result.New(result.WithFailures(a.Failures()...))
 }

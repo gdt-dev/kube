@@ -157,19 +157,19 @@ matches some expectation:
 * `kube.with.labels`: (optional) `map[string]string` containing the label keys
   and values to use in constructing an equality label selector (for all listed
   labels)
-* `kube.assert`: (optional) object containing assertions to make about the
+* `assert`: (optional) object containing assertions to make about the
   action performed by the test.
-* `kube.assert.error`: (optional) string to match a returned error from the
+* `assert.error`: (optional) string to match a returned error from the
   Kubernetes API server.
-* `kube.assert.len`: (optional) int with the expected number of items returned.
-* `kube.assert.notfound`: (optional) bool indicating the test author expects
+* `assert.len`: (optional) int with the expected number of items returned.
+* `assert.notfound`: (optional) bool indicating the test author expects
   the Kubernetes API to return a 404/Not Found for a resource.
-* `kube.assert.unknown`: (optional) bool indicating the test author expects the
+* `assert.unknown`: (optional) bool indicating the test author expects the
   Kubernetes API server to respond that it does not know the type of resource
   attempting to be fetched or created.
-* `kube.assert.matches`: (optional) a YAML string, a filepath, or a
+* `assert.matches`: (optional) a YAML string, a filepath, or a
   `map[string]interface{}` representing the content that you expect to find in
-  the returned result from the `kube.get` call. If `kube.assert.matches` is a
+  the returned result from the `kube.get` call. If `assert.matches` is a
   string, the string can be either a file path to a YAML manifest or
   inline an YAML string containing the resource fields to compare.
   Only fields present in the Matches resource are compared. There is a
@@ -177,7 +177,7 @@ matches some expectation:
   the value of the fields match. Only scalar fields are matched entirely.
   In other words, you do not need to specify every field of a struct field
   in order to compare the value of a single field in the nested struct.
-* `kube.assert.conditions`: (optional) a map, keyed by `ConditionType` string,
+* `assert.conditions`: (optional) a map, keyed by `ConditionType` string,
   of any of the following:
   - a string containing the `Status` value that the `Condition` with the
     `ConditionType` should have.
@@ -189,18 +189,18 @@ matches some expectation:
       `ConditionType` should have
     * `reason` which is the exact string that should be present in the
       `Condition` with the `ConditionType`
-* `kube.assert.json`: (optional) object describing the assertions to make about
+* `assert.json`: (optional) object describing the assertions to make about
   resource(s) returned from the `kube.get` call to the Kubernetes API server.
-* `kube.assert.json.len`: (optional) integer representing the number of bytes in the
+* `assert.json.len`: (optional) integer representing the number of bytes in the
   resulting JSON object after successfully parsing the resource.
-* `kube.assert.json.paths`: (optional) map of strings where the keys of the map
+* `assert.json.paths`: (optional) map of strings where the keys of the map
   are JSONPath expressions and the values of the map are the expected value to
   be found when evaluating the JSONPath expression
-* `kube.assert.json.path_formats`: (optional) map of strings where the keys of the map are
+* `assert.json.path_formats`: (optional) map of strings where the keys of the map are
   JSONPath expressions and the values of the map are the expected format of the
   value to be found when evaluating the JSONPath expression. See the
   [list of valid format strings](#valid-format-strings)
-* `kube.assert.json.schema`: (optional) string containing a filepath to a
+* `assert.json.schema`: (optional) string containing a filepath to a
   JSONSchema document.  If present, the resource's structure will be validated
   against this JSONSChema document.
 
@@ -227,8 +227,8 @@ name: test-nginx-pod-not-exist
 tests:
  - kube:
      get: pods/nginx
-     assert:
-       notfound: true
+   assert:
+     notfound: true
 ```
 
 Testing that there are two Pods having the label `app:nginx`:
@@ -242,8 +242,8 @@ tests:
       with:
         labels:
           app: nginx
-      assert:
-        len: 2
+    assert:
+      len: 2
 ```
 
 Testing that a Pod with the name `nginx` exists by the specified timeout
@@ -323,9 +323,9 @@ tests:
   - exec: ssh -T someuser@ip
 ```
 
-### Asserting resource fields using `kube.assert.matches`
+### Asserting resource fields using `assert.matches`
 
-The `kube.assert.matches` field of a `gdt-kube` test Spec allows a test author
+The `assert.matches` field of a `gdt-kube` test Spec allows a test author
 to specify expected fields and those field contents in a resource that was
 returned by the Kubernetes API server from the result of a `kube.get` call.
 
@@ -342,16 +342,16 @@ tests:
  - name: check deployment's ready replicas is 2
    kube:
      get: deployments/my-deployment
-     assert:
-       matches: |
-         kind: Deployment
-         metadata:
-           name: my-deployment
-         status:
-           readyReplicas: 2
+   assert:
+     matches: |
+       kind: Deployment
+       metadata:
+         name: my-deployment
+       status:
+         readyReplicas: 2
 ```
 
-you don't even need to include the kind and metadata in `kube.assert.matches`.
+you don't even need to include the kind and metadata in `assert.matches`.
 If missing, no kind and name matching will be performed.
 
 ```yaml
@@ -359,10 +359,10 @@ tests:
  - name: check deployment's ready replicas is 2
    kube:
      get: deployments/my-deployment
-     assert:
-       matches: |
-         status:
-           readyReplicas: 2
+   assert:
+     matches: |
+       status:
+         readyReplicas: 2
 ```
 
 In fact, you don't need to use an inline multiline YAML string. You can
@@ -373,15 +373,15 @@ tests:
  - name: check deployment's ready replicas is 2
    kube:
      get: deployments/my-deployment
-     assert:
-       matches:
-         status:
-           readyReplicas: 2
+   assert:
+     matches:
+       status:
+         readyReplicas: 2
 ```
 
-### Asserting resource `Conditions` using `kube.assert.conditions`
+### Asserting resource `Conditions` using `assert.conditions`
 
-`kube.assertion.conditions` contains the assertions to make about a resource's
+`assertion.conditions` contains the assertions to make about a resource's
 `Status.Conditions` collection. It is a map, keyed by the ConditionType
 (matched case-insensitively), of assertions to make about that Condition. The
 assertions can be:
@@ -402,9 +402,9 @@ use lowercase strings:
 tests:
  - kube:
      get: pods/nginx
-     assert:
-       conditions:
-         ready: true
+   assert:
+     conditions:
+       ready: true
 ```
 
 If we wanted to assert that the `ContainersReady` Condition had a status
@@ -414,11 +414,11 @@ of either `False` or `Unknown`, we could write the test like this:
 tests:
  - kube:
      get: pods/nginx
-     assert:
-       conditions:
-         containersReady:
-          - false
-          - unknown
+   assert:
+     conditions:
+       containersReady:
+        - false
+        - unknown
 ```
 
 Finally, if we wanted to assert that a Deployment's `Progressing`
@@ -429,16 +429,16 @@ Condition had a Reason field with a value "NewReplicaSetAvailable"
 tests:
  - kube:
      get: deployments/nginx
-     assert:
-       conditions:
-         progressing:
-           status: true
-           reason: NewReplicaSetAvailable
+   assert:
+     conditions:
+       progressing:
+         status: true
+         reason: NewReplicaSetAvailable
 ```
 
-### Asserting resource fields using `kube.assert.json`
+### Asserting resource fields using `assert.json`
 
-The `kube.assert.json` field of a `gdt-kube` test Spec allows a test author to
+The `assert.json` field of a `gdt-kube` test Spec allows a test author to
 specify expected fields, the value of those fields as well as the format of
 field values in a resource that was returned by the Kubernetes API server from
 the result of a `kube.get` call.
@@ -446,7 +446,7 @@ the result of a `kube.get` call.
 Suppose you have a Deployment resource and you want to write a test that checks
 that a Deployment resource's `Status.ReadyReplicas` field is `2`.
 
-You can specify this expectation using the `kube.assert.json.paths` field,
+You can specify this expectation using the `assert.json.paths` field,
 which is a `map[string]interface{}` that takes map keys that are JSONPath
 expressions and map values of what the field at that JSONPath expression should
 contain:
@@ -456,10 +456,10 @@ tests:
  - name: check deployment's ready replicas is 2
    kube:
      get: deployments/my-deployment
-     assert:
-       json:
-        paths:
-          $.status.readyReplicas: 2 
+   assert:
+     json:
+       paths:
+         $.status.readyReplicas: 2 
 ```
 
 JSONPath expressions can be fairly complex, allowing the test author to, for
@@ -471,14 +471,14 @@ tests:
  - name: check deployment's pod template "app" label is "nginx"
    kube:
      get: deployments/my-deployment
-     assert:
-       json:
-        paths:
-          $.spec.template.labels["app"]: nginx
+   assert:
+     json:
+       paths:
+         $.spec.template.labels["app"]: nginx
 ```
 
 You can check that the value of a particular field at a JSONPath is formatted
-in a particular fashion using `kube.assert.json.path_formats`. This is a map,
+in a particular fashion using `assert.json.path_formats`. This is a map,
 keyed by JSONPath expression, of the data format the value of the field at that
 JSONPath expression should have. Valid data formats are:
 
@@ -511,11 +511,11 @@ date-time timestamp:
 tests:
   - kube:
       get: deployments/nginx
-      assert:
-        json:
-          path_formats:
-            $.metadata.uid: uuid4
-            $.metadata.creationTimestamp: date-time
+    assert:
+      json:
+        path_formats:
+          $.metadata.uid: uuid4
+          $.metadata.creationTimestamp: date-time
 ```
 
 ### Updating a resource and asserting corresponding field changes
@@ -564,10 +564,10 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          status:
-            readyReplicas: 2
+    assert:
+      matches:
+        status:
+          readyReplicas: 2
   - name: apply-deployment-change
     kube:
       apply: |
@@ -582,10 +582,10 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          status:
-            readyReplicas: 1
+    assert:
+      matches:
+        status:
+          readyReplicas: 1
   - name: delete-deployment
     kube:
       delete: deployments/nginx
@@ -619,16 +619,16 @@ tests:
   - name: deployment-exists
     kube:
       get: deployments/nginx
-      assert:
-        matches:
-          spec:
-            replicas: 2
-            template:
-              metadata:
-                labels:
-                  app: nginx
-          status:
-            readyReplicas: 2
+    assert:
+      matches:
+        spec:
+          replicas: 2
+          template:
+            metadata:
+              labels:
+                app: nginx
+        status:
+          readyReplicas: 2
   - name: delete-deployment
     kube:
       delete: deployments/nginx
@@ -685,13 +685,13 @@ ok  	command-line-arguments	3.683s
 
 You can see from the debug output above that `gdt` created the Deployment and
 then did a `kube.get` for the `deployments/nginx` Deployment. Initially
-(attempt 1), the `kube.assert.matches` assertion failed because the
+(attempt 1), the `assert.matches` assertion failed because the
 `status.readyReplicas` field was not present in the returned resource. `gdt`
 retried the `kube.get` call 4 more times (attempts 2-5), with attempts 2 and 3
 failed the existence check for the `status.readyReplicas` field and attempt 4
 failing the *value* check for the `status.readyReplicas` field being `1`
 instead of the expected `2`. Finally, when the Deployment was completely rolled
-out, attempt 5 succeeded in all the `kube.assert.matches` assertions.
+out, attempt 5 succeeded in all the `assert.matches` assertions.
 
 ## Determining Kubernetes config, context and namespace values
 

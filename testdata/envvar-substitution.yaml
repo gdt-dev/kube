@@ -15,5 +15,5 @@ tests:
   - name: ${pod_name}-no-longer-exists
     kube:
       get: pods/${pod_name}
-      assert:
-        notfound: true
+    assert:
+      notfound: true

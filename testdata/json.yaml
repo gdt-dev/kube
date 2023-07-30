@@ -11,15 +11,15 @@ tests:
       after: 20s
     kube:
       get: deployments/nginx
-      assert:
-        json:
-          paths:
-            $.spec.replicas: 2
-            $.spec.template.metadata.labels["app"]: nginx
-            $.status.readyReplicas: 2
-          path_formats:
-            $.metadata.uid: uuid4
-            $.metadata.creationTimestamp: date-time
+    assert:
+      json:
+        paths:
+          $.spec.replicas: 2
+          $.spec.template.metadata.labels["app"]: nginx
+          $.status.readyReplicas: 2
+        path_formats:
+          $.metadata.uid: uuid4
+          $.metadata.creationTimestamp: date-time
   - name: delete-deployment
     kube:
       delete: deployments/nginx

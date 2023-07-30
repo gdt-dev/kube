@@ -5,5 +5,5 @@ fixtures:
 tests:
  - kube:
      delete: pods/doesnotexist
-     assert:
-       notfound: true
+   assert:
+     notfound: true

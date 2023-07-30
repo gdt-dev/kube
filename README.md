@@ -233,7 +233,7 @@ tests:
 
 Testing that there are two Pods having the label `app:nginx`:
 
-```yaml`
+```yaml
 name: list-pods-with-labels
 tests:
   - name: verify-pods-with-app-nginx-label

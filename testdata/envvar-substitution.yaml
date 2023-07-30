@@ -1,6 +1,6 @@
 name: envvar-substitution
 description: create, get and delete a Pod with envvar substitutions
-require:
+fixtures:
   - kind
 tests:
   - name: create-${pod_name}

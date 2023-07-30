@@ -1,6 +1,6 @@
 name: list-pods-empty
 description: test empty list of Pod resources
-require:
+fixtures:
   - kind
 tests:
   - name: verify-no-pods

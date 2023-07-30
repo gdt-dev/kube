@@ -1,6 +1,6 @@
 name: conditions
 description: create a deployment and check the Ready condition eventually equals True
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment

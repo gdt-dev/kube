@@ -1,6 +1,6 @@
 name: json
 description: create a deployment and check the json condition succeeds
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment

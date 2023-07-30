@@ -1,6 +1,6 @@
 name: list-pods-with-labels
 description: test list of Pod resources using label selector
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment

@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ import (
 
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/gdt-dev/gdt/debug"
+	gdterrors "github.com/gdt-dev/gdt/errors"
 	"github.com/gdt-dev/gdt/parse"
 	"github.com/gdt-dev/gdt/result"
 	gdttypes "github.com/gdt-dev/gdt/types"
@@ -37,38 +39,39 @@ const (
 
 // Run executes the test described by the Kubernetes test. A new Kubernetes
 // client request is made during this call.
-func (s *Spec) Run(ctx context.Context, t *testing.T) error {
+func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 	c, err := s.connect(ctx)
 	if err != nil {
-		return err
+		return result.New(
+			result.WithRuntimeError(ConnectError(err)),
+		)
 	}
+	var res *result.Result
 	t.Run(s.Title(), func(t *testing.T) {
 		if s.Kube.Get != "" {
-			err = s.runGet(ctx, t, c)
+			res = s.get(ctx, t, c)
 		}
 		if s.Kube.Create != "" {
-			err = s.runCreate(ctx, t, c)
+			res = s.create(ctx, t, c)
 		}
 		if s.Kube.Delete != "" {
-			err = s.runDelete(ctx, t, c)
+			res = s.delete(ctx, t, c)
 		}
 		if s.Kube.Apply != "" {
-			err = s.runApply(ctx, t, c)
+			res = s.apply(ctx, t, c)
 		}
 	})
-	return result.New(
-		result.WithError(err),
-	)
+	return res
 }
 
-// runGet executes either a List() or a Get() call against the Kubernetes API
+// get executes either a List() or a Get() call against the Kubernetes API
 // server and evaluates any assertions that have been set for the returned
 // results.
-func (s *Spec) runGet(
+func (s *Spec) get(
 	ctx context.Context,
 	t *testing.T,
 	c *connection,
-) error {
+) *result.Result {
 	kind, name := splitKindName(s.Kube.Get)
 	gvk := schema.GroupVersionKind{
 		Kind: kind,
@@ -76,10 +79,7 @@ func (s *Spec) runGet(
 	res, err := c.gvrFromGVK(gvk)
 	a := newAssertions(s.Kube.Assert, err, nil)
 	if !a.OK() {
-		for _, f := range a.Failures() {
-			t.Error(f)
-		}
-		return nil
+		return result.New(result.WithFailures(a.Failures()...))
 	}
 
 	// if the Spec has no timeout, default it to a reasonable value
@@ -95,7 +95,6 @@ func (s *Spec) runGet(
 	bo := backoff.WithContext(backoff.NewExponentialBackOff(), ctx)
 	ticker := backoff.NewTicker(bo)
 	attempts := 0
-	success := false
 	start := time.Now().UTC()
 	for tick := range ticker.C {
 		attempts++
@@ -123,12 +122,7 @@ func (s *Spec) runGet(
 			)
 		}
 	}
-	if !success {
-		for _, f := range a.Failures() {
-			t.Error(f)
-		}
-	}
-	return nil
+	return result.New(result.WithFailures(a.Failures()...))
 }
 
 // doList performs the List() call and assertion check for a supplied resource
@@ -180,20 +174,23 @@ func splitKindName(subject string) (string, string) {
 	return kind, name
 }
 
-// runCreate executes a Create() call against the Kubernetes API server and
+// create executes a Create() call against the Kubernetes API server and
 // evaluates any assertions that have been set for the returned results.
-func (s *Spec) runCreate(
+func (s *Spec) create(
 	ctx context.Context,
 	t *testing.T,
 	c *connection,
-) error {
+) *result.Result {
 	var err error
 	var r io.Reader
 	if probablyFilePath(s.Kube.Create) {
 		path := s.Kube.Create
 		f, err := os.Open(path)
 		if err != nil {
-			return err
+			// This should never happen because we check during parse time
+			// whether the file can be opened.
+			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			return result.New(result.WithRuntimeError(rterr))
 		}
 		defer f.Close()
 		r = f
@@ -205,7 +202,8 @@ func (s *Spec) runCreate(
 
 	objs, err := unstructuredFromReader(r)
 	if err != nil {
-		return err
+		rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+		return result.New(result.WithRuntimeError(rterr))
 	}
 	for _, obj := range objs {
 		gvk := obj.GetObjectKind().GroupVersionKind()
@@ -216,10 +214,7 @@ func (s *Spec) runCreate(
 		res, err := c.gvrFromGVK(gvk)
 		a := newAssertions(s.Kube.Assert, err, nil)
 		if !a.OK() {
-			for _, f := range a.Failures() {
-				t.Error(f)
-			}
-			return nil
+			return result.New(result.WithFailures(a.Failures()...))
 		}
 		obj, err := c.client.Resource(res).Namespace(ns).Create(
 			ctx,
@@ -231,29 +226,28 @@ func (s *Spec) runCreate(
 		// to the Assertions struct, I will modify this block to look for an
 		// indexed set of error assertions.
 		a = newAssertions(s.Kube.Assert, err, obj)
-		if !a.OK() {
-			for _, f := range a.Failures() {
-				t.Error(f)
-			}
-		}
+		return result.New(result.WithFailures(a.Failures()...))
 	}
 	return nil
 }
 
-// runApply executes an Apply() call against the Kubernetes API server and
+// apply executes an Apply() call against the Kubernetes API server and
 // evaluates any assertions that have been set for the returned results.
-func (s *Spec) runApply(
+func (s *Spec) apply(
 	ctx context.Context,
 	t *testing.T,
 	c *connection,
-) error {
+) *result.Result {
 	var err error
 	var r io.Reader
 	if probablyFilePath(s.Kube.Apply) {
 		path := s.Kube.Apply
 		f, err := os.Open(path)
 		if err != nil {
-			return err
+			// This should never happen because we check during parse time
+			// whether the file can be opened.
+			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			return result.New(result.WithRuntimeError(rterr))
 		}
 		defer f.Close()
 		r = f
@@ -265,7 +259,8 @@ func (s *Spec) runApply(
 
 	objs, err := unstructuredFromReader(r)
 	if err != nil {
-		return err
+		rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+		return result.New(result.WithRuntimeError(rterr))
 	}
 	for _, obj := range objs {
 		gvk := obj.GetObjectKind().GroupVersionKind()
@@ -276,10 +271,7 @@ func (s *Spec) runApply(
 		res, err := c.gvrFromGVK(gvk)
 		a := newAssertions(s.Kube.Assert, err, nil)
 		if !a.OK() {
-			for _, f := range a.Failures() {
-				t.Error(f)
-			}
-			return nil
+			return result.New(result.WithFailures(a.Failures()...))
 		}
 		obj, err := c.client.Resource(res).Namespace(ns).Apply(
 			ctx,
@@ -298,11 +290,7 @@ func (s *Spec) runApply(
 		// to the Assertions struct, I will modify this block to look for an
 		// indexed set of error assertions.
 		a = newAssertions(s.Kube.Assert, err, obj)
-		if !a.OK() {
-			for _, f := range a.Failures() {
-				t.Error(f)
-			}
-		}
+		return result.New(result.WithFailures(a.Failures()...))
 	}
 	return nil
 }
@@ -340,33 +328,34 @@ func unstructuredFromReader(
 	return objs, nil
 }
 
-// runDelete executes either Delete() call against the Kubernetes API server
+// delete executes either Delete() call against the Kubernetes API server
 // and evaluates any assertions that have been set for the returned results.
-func (s *Spec) runDelete(
+func (s *Spec) delete(
 	ctx context.Context,
 	t *testing.T,
 	c *connection,
-) error {
+) *result.Result {
 	if probablyFilePath(s.Kube.Delete) {
 		path := s.Kube.Delete
 		f, err := os.Open(path)
 		if err != nil {
-			return err
+			// This should never happen because we check during parse time
+			// whether the file can be opened.
+			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			return result.New(result.WithRuntimeError(rterr))
 		}
 		defer f.Close()
 		objs, err := unstructuredFromReader(f)
 		if err != nil {
-			return err
+			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			return result.New(result.WithRuntimeError(rterr))
 		}
 		for _, obj := range objs {
 			gvk := obj.GetObjectKind().GroupVersionKind()
 			res, err := c.gvrFromGVK(gvk)
 			a := newAssertions(s.Kube.Assert, err, nil)
 			if !a.OK() {
-				for _, f := range a.Failures() {
-					t.Error(f)
-				}
-				return nil
+				return result.New(result.WithFailures(a.Failures()...))
 			}
 			name := obj.GetName()
 			ns := obj.GetNamespace()
@@ -377,11 +366,12 @@ func (s *Spec) runDelete(
 			// object that was deleted, which is wrong. When I add the polymorphism
 			// to the Assertions struct, I will modify this block to look for an
 			// indexed set of error assertions.
-			if err = s.doDelete(ctx, t, c, res, name, ns); err != nil {
-				return err
+			r := s.doDelete(ctx, t, c, res, name, ns)
+			if len(r.Failures()) > 0 {
+				return r
 			}
 		}
-		return nil
+		return result.New()
 	}
 
 	kind, name := splitKindName(s.Kube.Delete)
@@ -391,10 +381,7 @@ func (s *Spec) runDelete(
 	res, err := c.gvrFromGVK(gvk)
 	a := newAssertions(s.Kube.Assert, err, nil)
 	if !a.OK() {
-		for _, f := range a.Failures() {
-			t.Error(f)
-		}
-		return nil
+		return result.New(result.WithFailures(a.Failures()...))
 	}
 	if name == "" {
 		return s.doDeleteCollection(ctx, t, c, res, s.Namespace())
@@ -411,19 +398,14 @@ func (s *Spec) doDelete(
 	res schema.GroupVersionResource,
 	name string,
 	namespace string,
-) error {
+) *result.Result {
 	err := c.client.Resource(res).Namespace(namespace).Delete(
 		ctx,
 		name,
 		metav1.DeleteOptions{},
 	)
 	a := newAssertions(s.Kube.Assert, err, nil)
-	if !a.OK() {
-		for _, f := range a.Failures() {
-			t.Error(f)
-		}
-	}
-	return nil
+	return result.New(result.WithFailures(a.Failures()...))
 }
 
 // doDeleteCollection performs the DeleteCollection() call and assertion check
@@ -434,17 +416,12 @@ func (s *Spec) doDeleteCollection(
 	c *connection,
 	res schema.GroupVersionResource,
 	namespace string,
-) error {
+) *result.Result {
 	err := c.client.Resource(res).Namespace(namespace).DeleteCollection(
 		ctx,
 		metav1.DeleteOptions{},
 		metav1.ListOptions{},
 	)
 	a := newAssertions(s.Kube.Assert, err, nil)
-	if !a.OK() {
-		for _, f := range a.Failures() {
-			t.Error(f)
-		}
-	}
-	return nil
+	return result.New(result.WithFailures(a.Failures()...))
 }

@@ -1,6 +1,6 @@
 name: create-unknown-resource
 description: create with YAML for unknown resource
-require:
+fixtures:
   - kind
 tests:
  - kube:

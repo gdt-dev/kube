@@ -1,6 +1,6 @@
 name: delete-unknown-resource
 description: delete with YAML for unknown resource
-require:
+fixtures:
   - kind
 tests:
  - kube:

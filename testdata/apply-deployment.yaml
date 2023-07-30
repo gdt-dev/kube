@@ -1,6 +1,6 @@
 name: apply-deployment
 description: create, get, apply a change, get, delete a Deployment
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment

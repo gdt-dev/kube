@@ -111,6 +111,12 @@ var (
 		"%w: condition does not match expectation",
 		gdterrors.ErrFailure,
 	)
+	// ErrConnect is returned when we failed to create a client config to
+	// connect to the Kubernetes API server.
+	ErrConnect = fmt.Errorf(
+		"%w: k8s connect failure",
+		gdterrors.RuntimeError,
+	)
 )
 
 // KubeConfigNotFound returns ErrKubeConfigNotFound for a given filepath
@@ -183,4 +189,10 @@ func MatchesNotEqual(msg string) error {
 // `kube.assert.conditions` object did not match the returned resource.
 func ConditionDoesNotMatch(msg string) error {
 	return fmt.Errorf("%w: %s", ErrConditionDoesNotMatch, msg)
+}
+
+// ConnectError returns ErrConnnect when an error is found trying to construct
+// a Kubernetes client connection.
+func ConnectError(err error) error {
+	return fmt.Errorf("%w: %s", ErrConnect, err)
 }

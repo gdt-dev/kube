@@ -1,6 +1,6 @@
 name: create-file-not-found
 description: create filepath not found
-require:
+fixtures:
   - kind
 tests:
  - kube:

@@ -1,6 +1,6 @@
 name: delete-file-not-found
 description: delete filepath not found
-require:
+fixtures:
   - kind
 tests:
  - kube:

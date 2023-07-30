@@ -11,7 +11,6 @@ import (
 
 	"github.com/gdt-dev/gdt"
 	"github.com/gdt-dev/gdt/errors"
-	"github.com/gdt-dev/gdt/scenario"
 	gdttypes "github.com/gdt-dev/gdt/types"
 	gdtkube "github.com/gdt-dev/kube"
 	"github.com/stretchr/testify/assert"
@@ -225,12 +224,12 @@ func TestParse(t *testing.T) {
 
 	fp := filepath.Join("testdata", "parse.yaml")
 
-	s, err := gdt.From(fp)
+	suite, err := gdt.From(fp)
 	require.Nil(err)
-	require.NotNil(s)
+	require.NotNil(suite)
 
-	assert.IsType(&scenario.Scenario{}, s)
-	sc := s.(*scenario.Scenario)
+	require.Len(suite.Scenarios, 1)
+	s := suite.Scenarios[0]
 
 	podYAML := `apiVersion: v1
 kind: Pod
@@ -242,7 +241,7 @@ spec:
      image: nginx:1.7.9
 `
 
-	expTests := []gdttypes.TestUnit{
+	expTests := []gdttypes.Evaluable{
 		&gdtkube.Spec{
 			Spec: gdttypes.Spec{
 				Index:    0,
@@ -317,5 +316,5 @@ spec:
 			},
 		},
 	}
-	assert.Equal(expTests, sc.Tests)
+	assert.Equal(expTests, s.Tests)
 }

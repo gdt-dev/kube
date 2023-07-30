@@ -1,6 +1,6 @@
 name: invalid-resource-specifier-multiple-resources
 description: invalid spec that shows an invalid resource specifier for `get` using spaces to indicate multiple resources
-require:
+fixtures:
   - kind
 tests:
   - kube:

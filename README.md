@@ -74,7 +74,7 @@ All `gdt` scenarios have the following fields:
   contents
 * `defaults`: (optional) is a map, keyed by a plugin name, of default options
   and configuration values for that plugin.
-* `require`: (optional) list of strings indicating named fixtures that will be
+* `fixtures`: (optional) list of strings indicating named fixtures that will be
   started before any of the tests in the file are run
 * `tests`: list of [`Spec`][basespec] specializations that represent the
   runnable test units in the test scenario.
@@ -264,7 +264,7 @@ definition contained in a YAML file:
 ```yaml
 name: create-get-delete-pod
 description: create, get and delete a Pod
-require:
+fixtures:
   - kind
 tests:
   - name: create-pod
@@ -284,7 +284,7 @@ definition using an inline YAML blob:
 ```yaml
 name: create-get-delete-pod
 description: create, get and delete a Pod
-require:
+fixtures:
   - kind
 tests:
   # "kube.create" is a shortcut for the longer object->field format
@@ -314,7 +314,7 @@ connectivity to the Pod.
 ```yaml
 name: create-check-ssh
 description: create a Deployment then check SSH connectivity
-require:
+fixtures:
   - kind
 tests:
   - kube.create: manifests/deployment.yaml
@@ -553,7 +553,7 @@ file `testdata/apply-deployment.yaml`:
 ```yaml
 name: apply-deployment
 description: create, get, apply a change, get, delete a Deployment
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment
@@ -610,7 +610,7 @@ file: `testdata/matches.yaml`:
 ```yaml
 name: matches
 description: create a deployment and check the matches condition succeeds
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment
@@ -751,11 +751,11 @@ func TestExample(t *testing.T) {
 }
 ```
 
-In your test file, you would list the "kind" fixture in the `requires` list:
+In your test file, you would list the "kind" fixture in the `fixtures` list:
 
 ```yaml
 name: example-using-kind
-require:
+fixtures:
  - kind
 tests:
  - kube.get: pods/nginx

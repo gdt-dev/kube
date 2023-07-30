@@ -1,6 +1,6 @@
 name: matches
 description: create a deployment and check the matches condition succeeds
-require:
+fixtures:
   - kind
 tests:
   - name: create-deployment

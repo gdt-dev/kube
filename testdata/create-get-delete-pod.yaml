@@ -1,6 +1,6 @@
 name: create-get-delete-pod
 description: create, get and delete a Pod
-require:
+fixtures:
   - kind
 tests:
   - name: create-pod

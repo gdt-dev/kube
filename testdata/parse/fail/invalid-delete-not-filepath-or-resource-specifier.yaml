@@ -1,6 +1,6 @@
 name: delete-not-filepath-or-resource-specifier
 description: invalid spec contains YAML string for the delete resource specifier
-require:
+fixtures:
   - kind
 tests:
  - name: invalid-delete-not-filepath-or-resource-specifier

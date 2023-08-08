@@ -16,6 +16,7 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	gdtcontext "github.com/gdt-dev/gdt/context"
 	"github.com/gdt-dev/gdt/debug"
 	gdterrors "github.com/gdt-dev/gdt/errors"
 	"github.com/gdt-dev/gdt/parse"
@@ -59,6 +60,16 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 		}
 		if s.Kube.Apply != "" {
 			res = s.apply(ctx, t, c)
+		}
+		for _, failure := range res.Failures() {
+			if gdtcontext.TimedOut(ctx, failure) {
+				to := s.Timeout
+				if to != nil && !to.Expected {
+					t.Error(gdterrors.TimeoutExceeded(to.After, failure))
+				}
+			} else {
+				t.Error(failure)
+			}
 		}
 	})
 	return res

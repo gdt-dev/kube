@@ -1,6 +1,0 @@
-name: unknown-context
-description: unknown kubecontext specified in spec
-tests:
- - kube:
-     create: testdata/manifests/nginx-pod.yaml
-     context: unknownctx

@@ -1,9 +1,0 @@
-name: unknown-context-in-defaults
-description: unknown kubecontext specified in defaults
-defaults:
-  kube:
-     context: unknownctx
-tests:
- - kube:
-     create: testdata/manifests/nginx-pod.yaml
-

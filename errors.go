@@ -13,6 +13,15 @@ import (
 )
 
 var (
+	// ErrExpectedMapOrYAMLString is returned when a field that can contain a
+	// map[string]interface{} or an embedded YAML string did not contain either
+	// of those things.
+	// TODO(jaypipes): Move to gdt core?
+	ErrExpectedMapOrYAMLString = fmt.Errorf(
+		"%w: expected either map[string]interface{} "+
+			"or a string with embedded YAML",
+		gdterrors.ErrParse,
+	)
 	// ErrMoreThanOneShortcut is returned when the test author included
 	// more than one shortcut (e.g. `kube.create` or `kube.apply`) in the same
 	// test spec.
@@ -118,6 +127,15 @@ var (
 		gdterrors.RuntimeError,
 	)
 )
+
+// ExpectedMapOrYAMLStringAt returns ErrExpectedMapOrYAMLString for a given
+// YAML node
+func ExpectedMapOrYAMLStringAt(node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w at line %d, column %d",
+		ErrExpectedMapOrYAMLString, node.Line, node.Column,
+	)
+}
 
 // KubeConfigNotFound returns ErrKubeConfigNotFound for a given filepath
 func KubeConfigNotFound(path string) error {

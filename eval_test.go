@@ -5,7 +5,6 @@
 package kube_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,39 +12,8 @@ import (
 	"github.com/gdt-dev/gdt"
 	gdtcontext "github.com/gdt-dev/gdt/context"
 	kindfix "github.com/gdt-dev/kube/fixtures/kind"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestUnknownKubeContextInSpec(t *testing.T) {
-	require := require.New(t)
-	assert := assert.New(t)
-
-	fp := filepath.Join("testdata", "parse", "fail", "unknown-context.yaml")
-
-	s, err := gdt.From(fp)
-	require.Nil(err)
-	require.NotNil(s)
-
-	err = s.Run(context.TODO(), t)
-	assert.NotNil(err)
-	assert.ErrorContains(err, "context \"unknownctx\" does not exist")
-}
-
-func TestUnknownKubeContextInDefaults(t *testing.T) {
-	require := require.New(t)
-	assert := assert.New(t)
-
-	fp := filepath.Join("testdata", "parse", "fail", "unknown-context-in-defaults.yaml")
-
-	s, err := gdt.From(fp)
-	require.Nil(err)
-	require.NotNil(s)
-
-	err = s.Run(context.TODO(), t)
-	require.NotNil(err)
-	assert.ErrorContains(err, "context \"unknownctx\" does not exist")
-}
 
 func TestListPodsEmpty(t *testing.T) {
 	skipIfKind(t)

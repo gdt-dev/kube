@@ -22,7 +22,7 @@ func currentDir() string {
 	return filepath.Dir(filename)
 }
 
-func TestBadDefaults(t *testing.T) {
+func TestFailureBadDefaults(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -138,7 +138,7 @@ func TestFailureCreateFileNotFound(t *testing.T) {
 	require.Nil(s)
 }
 
-func TestDeleteFileNotFound(t *testing.T) {
+func TestFailureDeleteFileNotFound(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 
@@ -173,6 +173,19 @@ func TestFailureBadMatchesInvalidYAML(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrMatchesInvalid)
+	assert.ErrorIs(err, errors.ErrParse)
+	require.Nil(s)
+}
+
+func TestFailureBadMatchesEmpty(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "bad-matches-empty.yaml")
+
+	s, err := gdt.From(fp)
+	require.NotNil(err)
+	assert.ErrorIs(err, gdtkube.ErrExpectedMapOrYAMLString)
 	assert.ErrorIs(err, errors.ErrParse)
 	require.Nil(s)
 }

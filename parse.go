@@ -43,12 +43,20 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
 			}
-			s.KubeGet = valNode.Value
+			v := valNode.Value
+			if err := validateResourceIdentifier(v); err != nil {
+				return err
+			}
+			s.KubeGet = v
 		case "kube.create":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
 			}
-			s.KubeCreate = valNode.Value
+			v := valNode.Value
+			if err := validateFileExists(v); err != nil {
+				return err
+			}
+			s.KubeCreate = v
 		case "kube.apply":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
@@ -58,7 +66,14 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
 			}
-			s.KubeDelete = valNode.Value
+			v := valNode.Value
+			if err := validateResourceIdentifierOrFilepath(v); err != nil {
+				return err
+			}
+			if err := validateFileExists(v); err != nil {
+				return err
+			}
+			s.KubeDelete = v
 		case "assert":
 			if valNode.Kind != yaml.MappingNode {
 				return errors.ExpectedMapAt(valNode)
@@ -79,8 +94,111 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 		return err
 	}
 	expandShortcut(s)
-	if err := validateKubeSpec(s); err != nil {
-		return err
+	if moreThanOneAction(s) {
+		return ErrMoreThanOneKubeAction
+	}
+	with := s.Kube.With
+	if with != nil {
+		if s.Kube.Get == "" && s.Kube.Delete == "" {
+			return ErrWithLabelsOnlyGetDelete
+		}
+	}
+	return nil
+}
+
+func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return errors.ExpectedMapAt(node)
+	}
+	// maps/structs are stored in a top-level Node.Content field which is a
+	// concatenated slice of Node pointers in pairs of key/values.
+	for i := 0; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		if keyNode.Kind != yaml.ScalarNode {
+			return errors.ExpectedScalarAt(keyNode)
+		}
+		key := keyNode.Value
+		valNode := node.Content[i+1]
+		switch key {
+		case "config":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			fp := valNode.Value
+			if err := validateFileExists(fp); err != nil {
+				return err
+			}
+			s.Config = fp
+		case "context":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			// NOTE(jaypipes): We can't validate the kubectx exists yet because
+			// fixtures may advertise a kube config and we look up the context
+			// in s.Config() method
+			s.Context = valNode.Value
+		case "namespace":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			s.Namespace = valNode.Value
+		case "apply":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			v := valNode.Value
+			if err := validateFileExists(v); err != nil {
+				return err
+			}
+			s.Apply = v
+		case "create":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			v := valNode.Value
+			if err := validateFileExists(v); err != nil {
+				return err
+			}
+			s.Create = v
+		case "get":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			v := valNode.Value
+			if err := validateResourceIdentifier(v); err != nil {
+				return err
+			}
+			s.Get = v
+		case "delete":
+			if valNode.Kind != yaml.ScalarNode {
+				return errors.ExpectedScalarAt(valNode)
+			}
+			v := valNode.Value
+			if err := validateResourceIdentifierOrFilepath(v); err != nil {
+				return err
+			}
+			if err := validateFileExists(v); err != nil {
+				return err
+			}
+			s.Delete = v
+		case "with":
+			if valNode.Kind != yaml.MappingNode {
+				return errors.ExpectedMapAt(valNode)
+			}
+			var w *With
+			if err := valNode.Decode(&w); err != nil {
+				return err
+			}
+			if w.Labels != nil {
+				_, err := labels.ValidatedSelectorFromSet(w.Labels)
+				if err != nil {
+					return InvalidWithLabels(err, valNode)
+				}
+			}
+			s.With = w
+		default:
+			return errors.UnknownFieldAt(key, keyNode)
+		}
 	}
 	return nil
 }
@@ -258,51 +376,6 @@ func moreThanOneAction(s *Spec) bool {
 		foundActions += 1
 	}
 	return foundActions > 1
-}
-
-// validateKubeSpec ensures that the test author has specified only a single
-// action in the KubeSpec and that various KubeSpec fields are set
-// appropriately.
-func validateKubeSpec(s *Spec) error {
-	if moreThanOneAction(s) {
-		return ErrMoreThanOneKubeAction
-	}
-	if s.Kube.Get != "" {
-		if err := validateResourceIdentifier(s.Kube.Get); err != nil {
-			return err
-		}
-	}
-	if s.Kube.Delete != "" {
-		if err := validateResourceIdentifierOrFilepath(s.Kube.Delete); err != nil {
-			return err
-		}
-		if err := validateFileExists(s.Kube.Delete); err != nil {
-			return err
-		}
-	}
-	if s.Kube.Create != "" {
-		if err := validateFileExists(s.Kube.Create); err != nil {
-			return err
-		}
-	}
-	if s.Kube.Apply != "" {
-		if err := validateFileExists(s.Kube.Apply); err != nil {
-			return err
-		}
-	}
-	with := s.Kube.With
-	if with != nil {
-		if s.Kube.Get == "" && s.Kube.Delete == "" {
-			return ErrWithLabelsOnlyGetDelete
-		}
-		if with.Labels != nil {
-			_, err := labels.ValidatedSelectorFromSet(with.Labels)
-			if err != nil {
-				return InvalidWithLabels(err)
-			}
-		}
-	}
-	return nil
 }
 
 // validateFileExists returns an error if the supplied path looks like a file

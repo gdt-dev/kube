@@ -158,8 +158,11 @@ func InvalidResourceSpecifierOrFilepath(subject string) error {
 
 // InvalidWithLabels returns ErrWithLabels with an error containing more
 // context.
-func InvalidWithLabels(err error) error {
-	return fmt.Errorf("%w: %s", ErrWithLabelsInvalid, err)
+func InvalidWithLabels(err error, node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w: %s at line %d, column %d",
+		ErrWithLabelsInvalid, err, node.Line, node.Column,
+	)
 }
 
 // ResourceUnknown returns ErrRuntimeResourceUnknown for a given kind

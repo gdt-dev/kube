@@ -1,5 +1,5 @@
 name: more-than-one-shortcut
 description: invalid kube spec with more than one shortcut field
 tests:
- - kube.create: testdata/pod.yaml
-   kube.apply: testdata/pod.yaml
+ - kube.create: testdata/manifests/nginx-pod.yaml
+   kube.apply: testdata/manifests/nginx-pod.yaml

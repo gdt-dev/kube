@@ -11,18 +11,11 @@ import (
 	gdttypes "github.com/gdt-dev/gdt/types"
 )
 
-// With houses one or more selectors that the Get and Delete fields may use to
-// select the resources to operate against.
-type With struct {
-	// Labels is a map, keyed by metadata Label, of Label values to select a
-	// resource by
-	Labels map[string]string `yaml:"labels,omitempty"`
-}
-
 // KubeSpec is the complex type containing all of the Kubernetes-specific
-// actions and assertions. Most users will use the `kube.create`, `kube.apply`
-// and `kube.describe` shortcut fields.
+// actions. Most users will use the `kube.create`, `kube.apply` and
+// `kube.describe` shortcut fields.
 type KubeSpec struct {
+	Action
 	// Config is the path of the kubeconfig to use in executing Kubernetes
 	// client calls for this Spec. If empty, the `kube` defaults' `config`
 	// value will be used. If that is empty, the following precedence is used:
@@ -39,52 +32,6 @@ type KubeSpec struct {
 	// calling the Kubernetes API. If empty, any namespace specified in the
 	// Defaults is used and then the string "default" is used.
 	Namespace string `yaml:"namespace,omitempty"`
-	// Create is a string containing a file path or raw YAML content describing
-	// a Kubernetes resource to call `kubectl create` with.
-	Create string `yaml:"create,omitempty"`
-	// Apply is a string containing a file path or raw YAML content describing
-	// a Kubernetes resource to call `kubectl apply` with.
-	Apply string `yaml:"apply,omitempty"`
-	// Delete is a string containing an argument to `kubectl delete` and must
-	// be one of the following:
-	//
-	// - a file path to a manifest that will be read and the resources
-	//   described in the manifest will be deleted
-	// - a resource kind or kind alias, e.g. "pods", "po", followed by one of
-	//   the following:
-	//   * a space or `/` character followed by the resource name to delete
-	//     only a resource with that name.
-	//   * a space followed by `-l ` followed by a label to delete resources
-	//     having such a label.
-	//   * the string `--all` to delete all resources of that kind.
-	Delete string `yaml:"delete,omitempty"`
-	// Get is a string containing an argument to `kubectl get` and must be one
-	// of the following:
-	//
-	// - a file path to a manifest that will be read and the resources within
-	//   retrieved via `kubectl get`
-	// - a resource kind or kind alias, e.g. "pods", "po", followed by one of
-	//   the following:
-	//   * a space or `/` character followed by the resource name to get only a
-	//     resource with that name.
-	//   * a space followed by `-l ` followed by a label to get resources
-	//     having such a label.
-	Get string `yaml:"get,omitempty"`
-	// With houses one or more selectors that the Get and Delete fields may use
-	// to select the resources to operate against.
-	//
-	// Use in conjunction with Get and Delete to filter resources:
-	//
-	// ```yaml
-	// tests:
-	//  - name: delete pods with app:nginx label
-	//    kube:
-	//      delete: pods
-	//      with:
-	//        labels:
-	//          app: nginx
-	// ```
-	With *With `yaml:"with,omitempty"`
 }
 
 // Spec describes a test of a *single* Kubernetes API request and response.

@@ -142,6 +142,35 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 				return errors.ExpectedScalarAt(valNode)
 			}
 			s.Namespace = valNode.Value
+		case "get", "create", "apply", "delete", "with":
+			// Because Action is an embedded struct and we parse it below, just
+			// ignore these fields in the top-level `kube:` field for now.
+		default:
+			return errors.UnknownFieldAt(key, keyNode)
+		}
+	}
+	var a Action
+	if err := node.Decode(&a); err != nil {
+		return err
+	}
+	s.Action = a
+	return nil
+}
+
+func (a *Action) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return errors.ExpectedMapAt(node)
+	}
+	// maps/structs are stored in a top-level Node.Content field which is a
+	// concatenated slice of Node pointers in pairs of key/values.
+	for i := 0; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		if keyNode.Kind != yaml.ScalarNode {
+			return errors.ExpectedScalarAt(keyNode)
+		}
+		key := keyNode.Value
+		valNode := node.Content[i+1]
+		switch key {
 		case "apply":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
@@ -150,7 +179,7 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 			if err := validateFileExists(v); err != nil {
 				return err
 			}
-			s.Apply = v
+			a.Apply = v
 		case "create":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
@@ -159,7 +188,7 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 			if err := validateFileExists(v); err != nil {
 				return err
 			}
-			s.Create = v
+			a.Create = v
 		case "get":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
@@ -168,7 +197,7 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 			if err := validateResourceIdentifier(v); err != nil {
 				return err
 			}
-			s.Get = v
+			a.Get = v
 		case "delete":
 			if valNode.Kind != yaml.ScalarNode {
 				return errors.ExpectedScalarAt(valNode)
@@ -180,7 +209,7 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 			if err := validateFileExists(v); err != nil {
 				return err
 			}
-			s.Delete = v
+			a.Delete = v
 		case "with":
 			if valNode.Kind != yaml.MappingNode {
 				return errors.ExpectedMapAt(valNode)
@@ -195,9 +224,7 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 					return InvalidWithLabels(err, valNode)
 				}
 			}
-			s.With = w
-		default:
-			return errors.UnknownFieldAt(key, keyNode)
+			a.With = w
 		}
 	}
 	return nil
@@ -343,18 +370,20 @@ func expandShortcut(s *Spec) {
 	if s.Kube != nil {
 		return
 	}
-	ks := &KubeSpec{}
+	ks := &KubeSpec{
+		Action: Action{},
+	}
 	if s.KubeGet != "" {
-		ks.Get = s.KubeGet
+		ks.Action.Get = s.KubeGet
 	}
 	if s.KubeCreate != "" {
-		ks.Create = s.KubeCreate
+		ks.Action.Create = s.KubeCreate
 	}
 	if s.KubeApply != "" {
-		ks.Apply = s.KubeApply
+		ks.Action.Apply = s.KubeApply
 	}
 	if s.KubeDelete != "" {
-		ks.Delete = s.KubeDelete
+		ks.Action.Delete = s.KubeDelete
 	}
 	s.Kube = ks
 }

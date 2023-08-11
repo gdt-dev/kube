@@ -264,7 +264,9 @@ spec:
 			},
 			KubeCreate: podYAML,
 			Kube: &gdtkube.KubeSpec{
-				Create: podYAML,
+				Action: gdtkube.Action{
+					Create: podYAML,
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -275,7 +277,9 @@ spec:
 			},
 			KubeApply: "testdata/manifests/nginx-pod.yaml",
 			Kube: &gdtkube.KubeSpec{
-				Apply: "testdata/manifests/nginx-pod.yaml",
+				Action: gdtkube.Action{
+					Apply: "testdata/manifests/nginx-pod.yaml",
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -285,7 +289,9 @@ spec:
 				Defaults: &gdttypes.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
-				Create: podYAML,
+				Action: gdtkube.Action{
+					Create: podYAML,
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -295,7 +301,9 @@ spec:
 				Defaults: &gdttypes.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
-				Delete: "testdata/manifests/nginx-pod.yaml",
+				Action: gdtkube.Action{
+					Delete: "testdata/manifests/nginx-pod.yaml",
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -306,7 +314,9 @@ spec:
 			},
 			KubeGet: "pods/name",
 			Kube: &gdtkube.KubeSpec{
-				Get: "pods/name",
+				Action: gdtkube.Action{
+					Get: "pods/name",
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -316,7 +326,9 @@ spec:
 				Defaults: &gdttypes.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
-				Get: "pods/name",
+				Action: gdtkube.Action{
+					Get: "pods/name",
+				},
 			},
 		},
 		&gdtkube.Spec{
@@ -326,7 +338,9 @@ spec:
 				Defaults: &gdttypes.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
-				Get: "pods/foo",
+				Action: gdtkube.Action{
+					Get: "pods/foo",
+				},
 			},
 			Assert: &gdtkube.Expect{
 				Len: &zero,

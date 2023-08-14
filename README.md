@@ -141,22 +141,17 @@ matches some expectation:
   allows you to override the `defaults.namespace` value from the test scenario.
 * `kube`: (optional) an object containing actions and assertions the test takes
   against the Kubernetes API server.
-* `kube.get`: (optional) string containing either a resource specifier (e.g.
-  `pods`, `po/nginx` or a file path to a YAML manifest containing resources
-  that will be read from the Kubernetes API server.
+* `kube.get`: (optional) string or object containing a resource identifier
+  (e.g.  `pods`, `po/nginx` or label selector for resources that will be read
+  from the Kubernetes API server.
 * `kube.create`: (optional) string containing either a file path to a YAML
   manifest or a string of raw YAML containing the resource(s) to create.
 * `kube.apply`: (optional) string containing either a file path to a YAML
   manifest or a string of raw YAML containing the resource(s) for which
   `gdt-kube` will perform a Kubernetes Apply call.
-* `kube.delete`: (optional) string containing either a resource specifier (e.g.
-  `pods`, `po/nginx` or a file path to a YAML manifest containing resources
-  that will be deleted.
-* `kube.with`: (optional) object containing selectors with which to filter
-  `get` and `delete` operations.
-* `kube.with.labels`: (optional) `map[string]string` containing the label keys
-  and values to use in constructing an equality label selector (for all listed
-  labels)
+* `kube.delete`: (optional) string or object containing either a resource
+  identifier (e.g.  `pods`, `po/nginx` , a file path to a YAML manifest, or a
+  label selector for resources that will be deleted.
 * `assert`: (optional) object containing assertions to make about the
   action performed by the test.
 * `assert.error`: (optional) string to match a returned error from the
@@ -236,14 +231,34 @@ Testing that there are two Pods having the label `app:nginx`:
 ```yaml
 name: list-pods-with-labels
 tests:
+  # You can use the shortcut kube.get
+  - name: verify-pods-with-app-nginx-label
+    kube.get:
+      type: pods
+      labels:
+        app: nginx
+    assert:
+      len: 2
+  # Or the long-form kube:get
   - name: verify-pods-with-app-nginx-label
     kube:
-      get: pods
-      with:
+      get:
+        type: pods
         labels:
           app: nginx
     assert:
       len: 2
+  # Like "kube.get", you can pass a label selector for "kube.delete"
+  - kube.delete:
+      type: pods
+      labels:
+        app: nginx
+  # And you can use the long-form kube:delete as well
+  - kube:
+      delete:
+        type: pods
+        labels:
+          app: nginx
 ```
 
 Testing that a Pod with the name `nginx` exists by the specified timeout
@@ -253,9 +268,8 @@ the timeout):
 ```yaml
 name: test-nginx-pod-exists-within-1-minute
 tests:
- - kube:
-     get: pods/nginx
-     timeout: 1m
+ - kube.get: pods/nginx
+   timeout: 1m
 ```
 
 Testing creation and subsequent fetch then delete of a Pod, specifying the Pod

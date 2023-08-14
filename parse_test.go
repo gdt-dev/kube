@@ -60,19 +60,6 @@ func TestFailureBothShortcutAndKubeSpec(t *testing.T) {
 	require.Nil(s)
 }
 
-func TestFailureMoreThanOneShortcut(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	fp := filepath.Join("testdata", "parse", "fail", "more-than-one-shortcut.yaml")
-
-	s, err := gdt.From(fp)
-	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrMoreThanOneShortcut)
-	assert.ErrorIs(err, errors.ErrParse)
-	require.Nil(s)
-}
-
 func TestFailureMoreThanOneKubeAction(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -203,19 +190,6 @@ func TestFailureBadMatchesNotMapAny(t *testing.T) {
 	require.Nil(s)
 }
 
-func TestWithLabelsOnlyGetDelete(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	fp := filepath.Join("testdata", "parse", "fail", "with-labels-only-get-delete.yaml")
-
-	s, err := gdt.From(fp)
-	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrWithLabelsOnlyGetDelete)
-	assert.ErrorIs(err, errors.ErrParse)
-	require.Nil(s)
-}
-
 func TestWithLabelsInvalid(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -262,7 +236,6 @@ spec:
 				Name:     "create a pod from YAML using kube.create shortcut",
 				Defaults: &gdttypes.Defaults{},
 			},
-			KubeCreate: podYAML,
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
 					Create: podYAML,
@@ -275,7 +248,6 @@ spec:
 				Name:     "apply a pod from a file using kube.apply shortcut",
 				Defaults: &gdttypes.Defaults{},
 			},
-			KubeApply: "testdata/manifests/nginx-pod.yaml",
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
 					Apply: "testdata/manifests/nginx-pod.yaml",
@@ -302,7 +274,10 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Delete: "testdata/manifests/nginx-pod.yaml",
+					Delete: gdtkube.NewResourceIdentifierOrFile(
+						"testdata/manifests/nginx-pod.yaml",
+						"", "", nil,
+					),
 				},
 			},
 		},
@@ -312,10 +287,11 @@ spec:
 				Name:     "fetch a pod via kube.get shortcut",
 				Defaults: &gdttypes.Defaults{},
 			},
-			KubeGet: "pods/name",
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: "pods/name",
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "name", nil,
+					),
 				},
 			},
 		},
@@ -327,19 +303,55 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: "pods/name",
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "name", nil,
+					),
 				},
 			},
 		},
 		&gdtkube.Spec{
 			Spec: gdttypes.Spec{
 				Index:    6,
+				Name:     "fetch a pod via kube.get shortcut to long-form resource identifier with labels",
+				Defaults: &gdttypes.Defaults{},
+			},
+			Kube: &gdtkube.KubeSpec{
+				Action: gdtkube.Action{
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "", map[string]string{
+							"app": "nginx",
+						},
+					),
+				},
+			},
+		},
+		&gdtkube.Spec{
+			Spec: gdttypes.Spec{
+				Index:    7,
+				Name:     "fetch a pod via kube:get long-form resource identifier with labels",
+				Defaults: &gdttypes.Defaults{},
+			},
+			Kube: &gdtkube.KubeSpec{
+				Action: gdtkube.Action{
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "", map[string]string{
+							"app": "nginx",
+						},
+					),
+				},
+			},
+		},
+		&gdtkube.Spec{
+			Spec: gdttypes.Spec{
+				Index:    8,
 				Name:     "fetch a pod with envvar substitution",
 				Defaults: &gdttypes.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: "pods/foo",
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "foo", nil,
+					),
 				},
 			},
 			Assert: &gdtkube.Expect{

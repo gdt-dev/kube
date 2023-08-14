@@ -93,11 +93,8 @@ func (s *Spec) Title() string {
 		// Shouldn't happen because of parsing, but you never know...
 		return ""
 	}
-	if s.Kube.Get != "" {
-		get := s.Kube.Get
-		if probablyFilePath(get) {
-			return "kube.get:" + filepath.Base(get)
-		}
+	if s.Kube.Get != nil {
+		return "kube.get:" + s.Kube.Get.Title()
 	}
 	if s.Kube.Create != "" {
 		create := s.Kube.Create
@@ -111,11 +108,8 @@ func (s *Spec) Title() string {
 			return "kube.apply:" + filepath.Base(apply)
 		}
 	}
-	if s.Kube.Delete != "" {
-		delete := s.Kube.Delete
-		if probablyFilePath(delete) {
-			return "kube.delete:" + filepath.Base(delete)
-		}
+	if s.Kube.Delete != nil {
+		return "kube.delete:" + s.Kube.Delete.Title()
 	}
 	return ""
 }

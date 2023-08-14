@@ -8,16 +8,16 @@ tests:
       create: testdata/manifests/nginx-deployment.yaml
   - name: verify-pods-with-app-nginx-label
     kube:
-      get: pods
-      with:
+      get:
+        type: pods
         labels:
           app: nginx
     assert:
       len: 2
   - name: verify-no-pods-with-app-noexist-label
     kube:
-      get: pods
-      with:
+      get:
+        type: pods
         labels:
           app: noexist
     assert:

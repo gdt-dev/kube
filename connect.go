@@ -88,11 +88,6 @@ func (s *Spec) Config(ctx context.Context) (*rest.Config, error) {
 	).ClientConfig()
 }
 
-type groupVersion struct {
-	group   string
-	version string
-}
-
 // connection is a struct containing a discovery client and a dynamic client
 // that the Spec uses to communicate with Kubernetes.
 type connection struct {

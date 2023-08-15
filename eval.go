@@ -49,13 +49,13 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 	}
 	var res *result.Result
 	t.Run(s.Title(), func(t *testing.T) {
-		if s.Kube.Get != "" {
+		if s.Kube.Get != nil {
 			res = s.get(ctx, t, c)
 		}
 		if s.Kube.Create != "" {
 			res = s.create(ctx, t, c)
 		}
-		if s.Kube.Delete != "" {
+		if s.Kube.Delete != nil {
 			res = s.delete(ctx, t, c)
 		}
 		if s.Kube.Apply != "" {
@@ -83,7 +83,7 @@ func (s *Spec) get(
 	t *testing.T,
 	c *connection,
 ) *result.Result {
-	kind, name := splitKindName(s.Kube.Get)
+	kind, name := s.Kube.Get.KindName()
 	gvk := schema.GroupVersionKind{
 		Kind: kind,
 	}
@@ -146,12 +146,10 @@ func (s *Spec) doList(
 	namespace string,
 ) gdttypes.Assertions {
 	opts := metav1.ListOptions{}
-	with := s.Kube.With
-	if with != nil {
-		if with.Labels != nil {
-			// We already validated the label selector during parse-time
-			opts.LabelSelector = labels.Set(with.Labels).String()
-		}
+	withlabels := s.Kube.Get.Labels()
+	if withlabels != nil {
+		// We already validated the label selector during parse-time
+		opts.LabelSelector = labels.Set(withlabels).String()
 	}
 	list, err := c.client.Resource(res).Namespace(namespace).List(
 		ctx, opts,
@@ -346,8 +344,8 @@ func (s *Spec) delete(
 	t *testing.T,
 	c *connection,
 ) *result.Result {
-	if probablyFilePath(s.Kube.Delete) {
-		path := s.Kube.Delete
+	if s.Kube.Delete.FilePath() != "" {
+		path := s.Kube.Delete.FilePath()
 		f, err := os.Open(path)
 		if err != nil {
 			// This should never happen because we check during parse time
@@ -385,7 +383,7 @@ func (s *Spec) delete(
 		return result.New()
 	}
 
-	kind, name := splitKindName(s.Kube.Delete)
+	kind, name := s.Kube.Delete.KindName()
 	gvk := schema.GroupVersionKind{
 		Kind: kind,
 	}
@@ -428,10 +426,16 @@ func (s *Spec) doDeleteCollection(
 	res schema.GroupVersionResource,
 	namespace string,
 ) *result.Result {
+	listOpts := metav1.ListOptions{}
+	withlabels := s.Kube.Delete.Labels()
+	if withlabels != nil {
+		// We already validated the label selector during parse-time
+		listOpts.LabelSelector = labels.Set(withlabels).String()
+	}
 	err := c.client.Resource(res).Namespace(namespace).DeleteCollection(
 		ctx,
 		metav1.DeleteOptions{},
-		metav1.ListOptions{},
+		listOpts,
 	)
 	a := newAssertions(s.Assert, err, nil)
 	return result.New(result.WithFailures(a.Failures()...))

@@ -1,8 +1,0 @@
-name: with-labels-only-get-delete
-description: invalid kube spec with label selector specified for create
-tests:
- - kube:
-     create: testdata/manifests/nginx-deployment.yaml
-     with:
-       labels:
-         app: nginx

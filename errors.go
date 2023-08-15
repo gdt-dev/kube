@@ -22,14 +22,6 @@ var (
 			"or a string with embedded YAML",
 		gdterrors.ErrParse,
 	)
-	// ErrMoreThanOneShortcut is returned when the test author included
-	// more than one shortcut (e.g. `kube.create` or `kube.apply`) in the same
-	// test spec.
-	ErrMoreThanOneShortcut = fmt.Errorf(
-		"%w: you may only specify a single shortcut field (e.g. "+
-			"`kube.create` or `kube.apply`",
-		gdterrors.ErrParse,
-	)
 	// ErrEitherShortcutOrKubeSpec is returned when the test author
 	// included both a shortcut (e.g. `kube.create` or `kube.apply`) AND the
 	// long-form `kube` object in the same test spec.
@@ -128,6 +120,24 @@ var (
 	)
 )
 
+// EitherShortcutOrKubeSpecAt returns ErrEitherShortcutOrKubeSpec for a given
+// YAML node
+func EitherShortcutOrKubeSpecAt(node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w at line %d, column %d",
+		ErrEitherShortcutOrKubeSpec, node.Line, node.Column,
+	)
+}
+
+// MoreThanOneKubeActionAt returns ErrMoreThanOneKubeAction for a given YAML
+// node
+func MoreThanOneKubeActionAt(node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w at line %d, column %d",
+		ErrMoreThanOneKubeAction, node.Line, node.Column,
+	)
+}
+
 // ExpectedMapOrYAMLStringAt returns ErrExpectedMapOrYAMLString for a given
 // YAML node
 func ExpectedMapOrYAMLStringAt(node *yaml.Node) error {
@@ -144,22 +154,31 @@ func KubeConfigNotFound(path string) error {
 
 // InvalidResourceSpecifier returns ErrResourceSpecifier for a given
 // supplied resource specifier.
-func InvalidResourceSpecifier(subject string) error {
-	return fmt.Errorf("%w: %s", ErrResourceSpecifierInvalid, subject)
+func InvalidResourceSpecifier(subject string, node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w: %s at line %d, column %d",
+		ErrResourceSpecifierInvalid, subject, node.Line, node.Column,
+	)
 }
 
 // InvalidResourceSpecifierOrFilepath returns
 // ErrResourceSpecifierOrFilepath for a given supplied subject.
-func InvalidResourceSpecifierOrFilepath(subject string) error {
+func InvalidResourceSpecifierOrFilepath(
+	subject string, node *yaml.Node,
+) error {
 	return fmt.Errorf(
-		"%w: %s", ErrResourceSpecifierInvalidOrFilepath, subject,
+		"%w: %s at line %d, column %d",
+		ErrResourceSpecifierInvalidOrFilepath, subject, node.Line, node.Column,
 	)
 }
 
 // InvalidWithLabels returns ErrWithLabels with an error containing more
 // context.
-func InvalidWithLabels(err error) error {
-	return fmt.Errorf("%w: %s", ErrWithLabelsInvalid, err)
+func InvalidWithLabels(err error, node *yaml.Node) error {
+	return fmt.Errorf(
+		"%w: %s at line %d, column %d",
+		ErrWithLabelsInvalid, err, node.Line, node.Column,
+	)
 }
 
 // ResourceUnknown returns ErrRuntimeResourceUnknown for a given kind

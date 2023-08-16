@@ -191,7 +191,7 @@ matches some expectation:
 * `assert.json.paths`: (optional) map of strings where the keys of the map
   are JSONPath expressions and the values of the map are the expected value to
   be found when evaluating the JSONPath expression
-* `assert.json.path_formats`: (optional) map of strings where the keys of the map are
+* `assert.json.path-formats`: (optional) map of strings where the keys of the map are
   JSONPath expressions and the values of the map are the expected format of the
   value to be found when evaluating the JSONPath expression. See the
   [list of valid format strings](#valid-format-strings)
@@ -492,7 +492,7 @@ tests:
 ```
 
 You can check that the value of a particular field at a JSONPath is formatted
-in a particular fashion using `assert.json.path_formats`. This is a map,
+in a particular fashion using `assert.json.path-formats`. This is a map,
 keyed by JSONPath expression, of the data format the value of the field at that
 JSONPath expression should have. Valid data formats are:
 
@@ -527,7 +527,7 @@ tests:
       get: deployments/nginx
     assert:
       json:
-        path_formats:
+        path-formats:
           $.metadata.uid: uuid4
           $.metadata.creationTimestamp: date-time
 ```

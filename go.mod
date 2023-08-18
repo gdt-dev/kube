@@ -3,7 +3,7 @@ module github.com/gdt-dev/kube
 go 1.19
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gdt-dev/gdt v1.2.1
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.4

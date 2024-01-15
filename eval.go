@@ -117,12 +117,11 @@ func (s *Spec) get(
 			a = s.doGet(ctx, t, c, res, name, s.Namespace())
 		}
 		success := a.OK()
-		term := a.Terminal()
 		debug.Println(
-			ctx, t, "%s (try %d after %s) ok: %v, terminal: %v",
-			s.Title(), attempts, after, success, term,
+			ctx, t, "%s (try %d after %s) ok: %v",
+			s.Title(), attempts, after, success,
 		)
-		if success || term {
+		if success {
 			ticker.Stop()
 			break
 		}

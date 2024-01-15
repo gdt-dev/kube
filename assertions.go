@@ -453,7 +453,6 @@ func (a *assertions) jsonOK() bool {
 		}
 		ja := gdtjson.New(exp.JSON, b)
 		if !ja.OK() {
-			a.terminal = ja.Terminal()
 			for _, f := range ja.Failures() {
 				a.Fail(f)
 			}

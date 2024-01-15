@@ -191,3 +191,11 @@ func NewResourceIdentifierOrFile(
 		labels: labels,
 	}
 }
+
+// splitKindName returns the Kind for a supplied `Get` or `Delete` command
+// where the user can specify either a resource kind or alias, e.g. "pods" or
+// "po", or the resource kind followed by a forward slash and a resource name.
+func splitKindName(subject string) (string, string) {
+	kind, name, _ := strings.Cut(subject, "/")
+	return kind, name
+}

@@ -274,15 +274,18 @@ func (a *assertions) errorOK() bool {
 		// that has a 404 ErrStatus.Code in it
 		apierr, ok := a.err.(*apierrors.StatusError)
 		if ok {
-			if !a.expectsNotFound() {
+			if a.expectsNotFound() {
 				if http.StatusNotFound != int(apierr.ErrStatus.Code) {
 					msg := fmt.Sprintf("got status code %d", apierr.ErrStatus.Code)
 					a.Fail(ExpectedNotFound(msg))
 					return false
 				}
+				// "Swallow" the NotFound error since we expected it.
+				a.err = nil
+			} else {
+				a.Fail(apierr)
+				return false
 			}
-			// "Swallow" the NotFound error since we expected it.
-			a.err = nil
 		}
 	}
 	if exp.Error != "" && a.r != nil {

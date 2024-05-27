@@ -1,0 +1,17 @@
+name: default-single-control-plane
+description: test default KinD cluster has a single control plane node
+fixtures:
+  - kind
+tests:
+  - name: list-all-nodes
+    kube.get: nodes
+    assert:
+      len: 1
+  - name: single-control-plane-node
+    kube:
+      get:
+        type: nodes
+        labels:
+          node-role.kubernetes.io/control-plane: ""
+    assert:
+      len: 1

@@ -5,6 +5,7 @@
 package kube
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -158,6 +159,8 @@ type Expect struct {
 	//            reason: NewReplicaSetAvailable
 	// ```
 	Conditions map[string]*ConditionMatch `yaml:"conditions,omitempty"`
+	// Placement describes expected Pod scheduling spread or pack outcomes.
+	Placement *PlacementAssertion `yaml:"placement,omitempty"`
 }
 
 // conditionMatch is a struct with fields that we will match a resource's
@@ -196,8 +199,21 @@ func (m *ConditionMatch) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
+// PlacementAssertion describes an expectation for Pod scheduling outcomes.
+type PlacementAssertion struct {
+	// Spread contains zero or more topology keys that gdt-kube will assert an
+	// even spread across.
+	Spread *gdttypes.FlexStrings `yaml:"spread,omitempty"`
+	// Pack contains zero or more topology keys that gdt-kube will assert
+	// bin-packing of resources within.
+	Pack *gdttypes.FlexStrings `yaml:"pack,omitempty"`
+}
+
 // assertions contains all assertions made for the exec test
 type assertions struct {
+	// c is the connection to the Kubernetes API for when the assertions needs
+	// to query for things like placement outcomes or Node resources.
+	c *connection
 	// failures contains the set of error messages for failed assertions
 	failures []error
 	// exp contains the expected conditions to assert against
@@ -226,7 +242,7 @@ func (a *assertions) Failures() []error {
 
 // OK checks all the assertions against the supplied arguments and returns true
 // if all assertions pass.
-func (a *assertions) OK() bool {
+func (a *assertions) OK(ctx context.Context) bool {
 	exp := a.exp
 	if exp == nil {
 		if a.err != nil {
@@ -247,7 +263,10 @@ func (a *assertions) OK() bool {
 	if !a.conditionsOK() {
 		return false
 	}
-	if !a.jsonOK() {
+	if !a.jsonOK(ctx) {
+		return false
+	}
+	if !a.placementOK(ctx) {
 		return false
 	}
 	return true
@@ -426,7 +445,7 @@ func (a *assertions) conditionsOK() bool {
 
 // jsonOK returns true if the subject matches the JSON conditions, false
 // otherwise
-func (a *assertions) jsonOK() bool {
+func (a *assertions) jsonOK(ctx context.Context) bool {
 	exp := a.exp
 	if exp.JSON != nil && a.hasSubject() {
 		var err error
@@ -438,12 +457,35 @@ func (a *assertions) jsonOK() bool {
 			}
 		}
 		ja := gdtjson.New(exp.JSON, b)
-		if !ja.OK() {
+		if !ja.OK(ctx) {
 			for _, f := range ja.Failures() {
 				a.Fail(f)
 			}
 			return false
 		}
+	}
+	return true
+}
+
+// placementOK returns true if the subject matches the Placement conditions,
+// false otherwise
+func (a *assertions) placementOK(ctx context.Context) bool {
+	exp := a.exp
+	if exp.Placement != nil && a.hasSubject() {
+		// TODO(jaypipes): Handle list returns...
+		res, ok := a.r.(*unstructured.Unstructured)
+		if !ok {
+			panic("expected result to be unstructured.Unstructured")
+		}
+		spread := exp.Placement.Spread
+		if spread != nil {
+			ok = a.placementSpreadOK(ctx, res, spread.Values())
+		}
+		pack := exp.Placement.Pack
+		if pack != nil {
+			ok = ok && a.placementPackOK(ctx, res, pack.Values())
+		}
+		return ok
 	}
 	return true
 }
@@ -465,11 +507,13 @@ func (a *assertions) hasSubject() bool {
 // newAssertions returns an assertions object populated with the supplied http
 // spec assertions
 func newAssertions(
+	c *connection,
 	exp *Expect,
 	err error,
 	r interface{},
 ) gdttypes.Assertions {
 	return &assertions{
+		c:        c,
 		failures: []error{},
 		exp:      exp,
 		err:      err,

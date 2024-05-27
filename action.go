@@ -100,7 +100,7 @@ func (a *Action) Do(
 ) error {
 	cmd := a.getCommand()
 
-	debug.Println(ctx, t, "kube: %s [ns: %s]", cmd, ns)
+	debug.Println(ctx, "kube: %s [ns: %s]", cmd, ns)
 	switch cmd {
 	case "get":
 		return a.get(ctx, t, c, ns, out)

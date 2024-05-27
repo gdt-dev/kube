@@ -190,6 +190,19 @@ func TestFailureBadMatchesNotMapAny(t *testing.T) {
 	require.Nil(s)
 }
 
+func TestFailureBadPlacementNotObject(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "bad-placement-not-object.yaml")
+
+	s, err := gdt.From(fp)
+	require.NotNil(err)
+	assert.ErrorIs(err, errors.ErrExpectedMap)
+	assert.ErrorIs(err, errors.ErrParse)
+	require.Nil(s)
+}
+
 func TestWithLabelsInvalid(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

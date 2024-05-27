@@ -65,10 +65,10 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 				return result.New(result.WithRuntimeError(err))
 			}
 		}
-		a = newAssertions(s.Assert, err, out)
-		success = a.OK()
+		a = newAssertions(c, s.Assert, err, out)
+		success = a.OK(ctx)
 		debug.Println(
-			ctx, t, "%s (try %d after %s) ok: %v",
+			ctx, "%s (try %d after %s) ok: %v",
 			s.Title(), attempts, after, success,
 		)
 		if success {
@@ -77,7 +77,7 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 		}
 		for _, f := range a.Failures() {
 			debug.Println(
-				ctx, t, "%s (try %d after %s) failure: %s",
+				ctx, "%s (try %d after %s) failure: %s",
 				s.Title(), attempts, after, f,
 			)
 		}

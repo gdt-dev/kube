@@ -184,6 +184,16 @@ matches some expectation:
       `ConditionType` should have
     * `reason` which is the exact string that should be present in the
       `Condition` with the `ConditionType`
+* `assert.placement`: (optional) an object describing assertions to make about
+  the placement (scheduling outcome) of Pods returned in the `kube.get` result.
+* `assert.placement.spread`: (optional) an single string or array of strings
+  for topology keys that the Pods returned in the `kube.get` result should be
+  spread evenly across, e.g. `topology.kubernetes.io/zone` or
+  `kubernetes.io/hostname`.
+* `assert.placement.pack`: (optional) an single string or array of strings for
+  topology keys that the Pods returned in the `kube.get` result should be
+  bin-packed within, e.g. `topology.kubernetes.io/zone` or
+  `kubernetes.io/hostname`.
 * `assert.json`: (optional) object describing the assertions to make about
   resource(s) returned from the `kube.get` call to the Kubernetes API server.
 * `assert.json.len`: (optional) integer representing the number of bytes in the
@@ -449,6 +459,102 @@ tests:
          status: true
          reason: NewReplicaSetAvailable
 ```
+
+### Asserting scheduling outcomes using `assert.placement`
+
+The `assert.placement` field of a `gdt-kube` test Spec allows a test author to
+specify the expected scheduling outcome for a set of Pods returned by the
+Kubernetes API server from the result of a `kube.get` call.
+
+#### Asserting even spread of Pods across a topology
+
+Suppose you have a Deployment resource with a `TopologySpreadConstraints` that
+specifies the Pods in the Deployment must land on different hosts:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+       - name: nginx
+         image: nginx:latest
+         ports:
+          - containerPort: 80
+      topologySpreadConstraints:
+       - maxSkew: 1
+         topologyKey: kubernetes.io/hostname
+         whenUnsatisfiable: DoNotSchedule
+         labelSelector:
+           matchLabels:
+             app: nginx
+```
+
+You can create a `gdt-kube` test case that verifies that your `nginx`
+Deployment's Pods are evenly spread across all available hosts:
+
+```yaml
+tests:
+ - kube:
+     get: deployments/nginx
+   assert:
+     placement:
+       spread: kubernetes.io/hostname
+```
+
+If there are more hosts than the `spec.replicas` in the Deployment, `gdt-kube`
+will ensure that each Pod landed on a unique host. If there are fewer hosts
+than the `spec.replicas` in the Deployment, `gdt-kube` will ensure that there
+is an even spread of Pods to hosts, with any host having no more than one more
+Pod than any other.
+
+#### Asserting bin-packing of Pods
+
+Suppose you have configured your Kubernetes scheduler to bin-pack Pods onto
+hosts by scheduling Pods to hosts with the most allocated CPU resources:
+
+```yaml
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 100
+        type: MostAllocated
+    name: NodeResourcesFit
+```
+
+You can create a `gdt-kube` test case that verifies that your `nginx`
+Deployment's Pods are packed onto the fewest unique hosts:
+
+```yaml
+tests:
+ - kube:
+     get: deployments/nginx
+   assert:
+     placement:
+       pack: kubernetes.io/hostname
+```
+
+`gdt-kube` will examine the total number of hosts that meet the nginx
+Deployment's scheduling and resource constraints and then assert that the
+number of hosts the Deployment's Pods landed on is the minimum number that
+would fit the total requested resources.
 
 ### Asserting resource fields using `assert.json`
 

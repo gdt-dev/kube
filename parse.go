@@ -341,6 +341,15 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			} else {
 				return ExpectedMapOrYAMLStringAt(valNode)
 			}
+		case "placement":
+			if valNode.Kind != yaml.MappingNode {
+				return errors.ExpectedMapAt(valNode)
+			}
+			var v *PlacementAssertion
+			if err := valNode.Decode(&v); err != nil {
+				return err
+			}
+			e.Placement = v
 		default:
 			return errors.UnknownFieldAt(key, keyNode)
 		}

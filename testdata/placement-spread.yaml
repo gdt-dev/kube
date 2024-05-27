@@ -1,0 +1,26 @@
+name: placement-spread
+description: check placement spread assertions
+fixtures:
+  - kind-three-workers-three-zones
+tests:
+  - name: create-deployment
+    kube:
+      create: testdata/manifests/nginx-deployment-spread-zones.yaml
+  - name: deployment-ready
+    timeout:
+      after: 40s
+    kube:
+      get: deployments/nginx-spread-zones
+    assert:
+      matches:
+        status:
+          readyReplicas: 6
+  - name: deployment-spread-evenly-across-hosts
+    kube:
+      get: deployments/nginx-spread-zones
+    assert:
+      placement:
+        spread: topology.kubernetes.io/zone
+  - name: delete-deployment
+    kube:
+      delete: deployments/nginx-spread-zones

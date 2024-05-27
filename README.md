@@ -775,6 +775,48 @@ tests:
  - kube.get: pods/nginx
 ```
 
+#### Passing a KinD configuration
+
+You may want to pass a custom KinD configuration resource by using the
+`fixtures.kind.WithConfigPath()` modifier:
+
+
+```go
+import (
+    "github.com/gdt-dev/gdt"
+    gdtkube "github.com/gdt-dev/kube"
+    gdtkind "github.com/gdt-dev/kube/fixtures/kind"
+)
+
+func TestExample(t *testing.T) {
+    s, err := gdt.From("path/to/test.yaml")
+    if err != nil {
+        t.Fatalf("failed to load tests: %s", err)
+    }
+
+    configPath := filepath.Join("testdata", "my-kind-config.yaml")
+
+    ctx := context.Background()
+    ctx = gdt.RegisterFixture(
+        ctx, "kind", gdtkind.New(),
+        gdtkind.WithConfigPath(configPath),
+    )
+    err = s.Run(ctx, t)
+    if err != nil {
+        t.Fatalf("failed to run tests: %s", err)
+    }
+}
+```
+
+In your test file, you would list the "kind" fixture in the `fixtures` list:
+
+```yaml
+name: example-using-kind
+fixtures:
+ - kind
+tests:
+ - kube.get: pods/nginx
+```
 ## Contributing and acknowledgements
 
 `gdt` was inspired by [Gabbi](https://github.com/cdent/gabbi), the excellent

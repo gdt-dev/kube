@@ -162,7 +162,12 @@ func (a *Action) doList(
 		// We already validated the label selector during parse-time
 		opts.LabelSelector = labels.Set(withlabels).String()
 	}
-	return c.client.Resource(res).Namespace(ns).List(
+	if c.resourceNamespaced(res) {
+		return c.client.Resource(res).Namespace(ns).List(
+			ctx, opts,
+		)
+	}
+	return c.client.Resource(res).List(
 		ctx, opts,
 	)
 }
@@ -176,7 +181,14 @@ func (a *Action) doGet(
 	ns string,
 	name string,
 ) (*unstructured.Unstructured, error) {
-	return c.client.Resource(res).Namespace(ns).Get(
+	if c.resourceNamespaced(res) {
+		return c.client.Resource(res).Namespace(ns).Get(
+			ctx,
+			name,
+			metav1.GetOptions{},
+		)
+	}
+	return c.client.Resource(res).Get(
 		ctx,
 		name,
 		metav1.GetOptions{},

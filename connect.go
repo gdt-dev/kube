@@ -156,6 +156,23 @@ func (c *connection) gvrFromGVK(
 	return r.Resource, nil
 }
 
+// resourceNamespaces returns true if the supplied schema.GroupVersionResource
+// is namespaced, false otherwise
+func (c *connection) resourceNamespaced(gvr schema.GroupVersionResource) bool {
+	apiResources, err := c.disco.ServerResourcesForGroupVersion(
+		gvr.GroupVersion().String(),
+	)
+	if err != nil {
+		panic("expected to find APIResource for GroupVersion " + gvr.GroupVersion().String())
+	}
+	for _, apiResource := range apiResources.APIResources {
+		if apiResource.Name == gvr.Resource {
+			return apiResource.Namespaced
+		}
+	}
+	panic("expected to find APIResource for GroupVersionResource " + gvr.Resource)
+}
+
 // connect returns a connection with a discovery client and a Kubernetes
 // client-go DynamicClient to use in communicating with the Kubernetes API
 // server configured for this Spec

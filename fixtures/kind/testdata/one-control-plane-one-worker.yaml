@@ -1,0 +1,25 @@
+name: one-control-plane-one-worker
+description: test default KinD cluster has one control plane node and one worker
+fixtures:
+  - kind-one-cp-one-worker
+tests:
+  - name: list-all-nodes
+    kube.get: nodes
+    assert:
+      len: 2
+  - name: one-control-plane-node
+    kube:
+      get:
+        type: nodes
+        labels:
+          node-role.kubernetes.io/control-plane: ""
+    assert:
+      len: 1
+  - name: one-worker-node
+    kube:
+      get:
+        type: nodes
+        labels:
+          role: worker
+    assert:
+      len: 1

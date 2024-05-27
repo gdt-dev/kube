@@ -340,7 +340,7 @@ func (a *assertions) notFoundOK() bool {
 // lenOK returns true if the subject matches the Len condition, false otherwise
 func (a *assertions) lenOK() bool {
 	exp := a.exp
-	if exp.Len != nil {
+	if exp.Len != nil && a.hasSubject() {
 		// if the supplied resp is a list of objects returned by the dynamic
 		// client check its length
 		list, ok := a.r.(*unstructured.UnstructuredList)

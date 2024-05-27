@@ -50,6 +50,7 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 	ticker := backoff.NewTicker(bo)
 	attempts := 0
 	start := time.Now().UTC()
+	success := false
 	for tick := range ticker.C {
 		attempts++
 		after := tick.Sub(start)
@@ -64,8 +65,8 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 				return result.New(result.WithRuntimeError(err))
 			}
 		}
-		a = newAssertions(s.Assert, err, &out)
-		success := a.OK()
+		a = newAssertions(s.Assert, err, out)
+		success = a.OK()
 		debug.Println(
 			ctx, t, "%s (try %d after %s) ok: %v",
 			s.Title(), attempts, after, success,
@@ -79,6 +80,11 @@ func (s *Spec) Eval(ctx context.Context, t *testing.T) *result.Result {
 				ctx, t, "%s (try %d after %s) failure: %s",
 				s.Title(), attempts, after, f,
 			)
+		}
+	}
+	if !success {
+		for _, fail := range a.Failures() {
+			t.Error(fail)
 		}
 	}
 	return result.New(result.WithFailures(a.Failures()...))

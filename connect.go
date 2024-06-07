@@ -7,6 +7,7 @@ package kube
 import (
 	"context"
 	"fmt"
+	"os"
 
 	gdtcontext "github.com/gdt-dev/gdt/context"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -191,7 +192,7 @@ func (s *Spec) connect(ctx context.Context) (*connection, error) {
 	}
 	disco := discocached.NewMemCacheClient(discoverer)
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(disco)
-	expander := restmapper.NewShortcutExpander(mapper, disco)
+	expander := restmapper.NewShortcutExpander(mapper, disco, func(s string) { fmt.Fprint(os.Stderr, s) })
 
 	return &connection{
 		mapper: expander,

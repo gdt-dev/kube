@@ -1,0 +1,8 @@
+name: bad-placement-not-object
+description: placement should be object
+tests:
+ - kube:
+     get: deployments/nginx
+   assert:
+     placement:
+      - foo

@@ -21,8 +21,8 @@ github.com/evanphx/json-patch v4.12.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQL
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/evanphx/json-patch/v5 v5.8.0 h1:lRj6N9Nci7MvzrXuX6HFzU8XjmhPiXPlsKEy1u0KQro=
 github.com/evanphx/json-patch/v5 v5.8.0/go.mod h1:VNkHZ/282BpEyt/tObQO8s5CMPmYYq14uClGH4abBuQ=
-github.com/gdt-dev/gdt v1.5.0 h1:HnLbiU8zXKK73SCGgm0R68dMvfry/J+pACHDODty48Y=
-github.com/gdt-dev/gdt v1.5.0/go.mod h1:qkAfKZpEIYy4ymXcDvcZpfxgVvRDQTpSqeU/ze/EobU=
+github.com/gdt-dev/gdt v1.6.2 h1:ZHugSKIpMdO8hLQ1pGMPs0xGrLwQIutliDFfTjCkdys=
+github.com/gdt-dev/gdt v1.6.2/go.mod h1:qkAfKZpEIYy4ymXcDvcZpfxgVvRDQTpSqeU/ze/EobU=
 github.com/go-logr/logr v1.3.0/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/logr v1.4.1 h1:pKouT5E8xu9zeFC39JXRDukb6JFQPXM5p5I91188VAQ=
 github.com/go-logr/logr v1.4.1/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=

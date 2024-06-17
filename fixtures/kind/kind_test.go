@@ -5,6 +5,9 @@
 package kind_test
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,10 +28,19 @@ func TestDefaultSingleControlPlane(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(s)
 
-	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
+	ctx = gdtcontext.RegisterFixture(
+		ctx, "kind",
+		kindfix.New(
+			kindfix.WithDeleteOnStop(),
+		),
+	)
 
 	err = s.Run(ctx, t)
+	w.Flush()
+	fmt.Println(b.String())
 	require.Nil(err)
 }
 
@@ -44,7 +56,9 @@ func TestOneControlPlaneOneWorker(t *testing.T) {
 
 	kindCfgPath := filepath.Join("testdata", "kind-config-one-cp-one-worker.yaml")
 
-	ctx := gdtcontext.New()
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
 	ctx = gdtcontext.RegisterFixture(
 		ctx, "kind-one-cp-one-worker",
 		kindfix.New(
@@ -54,6 +68,8 @@ func TestOneControlPlaneOneWorker(t *testing.T) {
 	)
 
 	err = s.Run(ctx, t)
+	w.Flush()
+	fmt.Println(b.String())
 	require.Nil(err)
 }
 

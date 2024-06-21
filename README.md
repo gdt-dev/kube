@@ -112,10 +112,20 @@ All `gdt` test specs have the same [base fields][base-spec-fields]:
 * `description`: (optional) string with longer description of the test unit.
 * `timeout`: (optional) an object containing [timeout information][timeout] for the test
   unit.
-* `timeout.after`: a string duration of time the test unit is expected to
+* `timeout`: (optional) a string duration of time the test unit is expected to
   complete within.
-* `timeout.expected`: a bool indicating that the test unit is expected to not
-  complete before `timeout.after`. This is really only useful in unit testing.
+* `retry`: (optional) an object containing retry configurationu for the test
+  unit. Some plugins will automatically attempt to retry the test action when
+  an assertion fails. This field allows you to control this retry behaviour for
+  each individual test.
+* `retry.interval`: (optional) a string duration of time that the test plugin
+  will retry the test action in the event assertions fail. The default interval
+  for retries is plugin-dependent.
+* `retry.attempts`: (optional) an integer indicating the number of times that a
+  plugin will retry the test action in the event assertions fail. The default
+  number of attempts for retries is plugin-dependent.
+* `retry.exponential`: (optional) a boolean indicating an exponential backoff
+  should be applied to the retry interval. The default is is plugin-dependent.
 * `wait` (optional) an object containing [wait information][wait] for the test
   unit.
 * `wait.before`: a string duration of time that gdt should wait before
@@ -123,7 +133,6 @@ All `gdt` test specs have the same [base fields][base-spec-fields]:
 * `wait.after`: a string duration of time that gdt should wait after executing
   the test unit's action.
 
-[timeout]: https://github.com/gdt-dev/gdt/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/types/timeout.go#L11-L22
 [wait]: https://github.com/gdt-dev/gdt/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/types/wait.go#L11-L25
 
 `gdt-kube` test specs have some additional fields that allow you to take some
@@ -711,108 +720,6 @@ tests:
       delete: deployments/nginx
 ```
 
-### Timeouts and retrying `kube.get` assertions
-
-When evaluating assertions for `kube.get`, `gdt` inspects the test's
-`timeout.after` value to determine how long to retry the `get` call and recheck
-the assertions.
-
-If a test's `timeout.after` is empty, `gdt` inspects the scenario's
-`defaults.timeout.after` value. If both of those values are empty, `gdt` will
-use a **default timeout of 5 seconds**.
-
-If you're interested in seeing the individual results of `gdt`'s
-assertion-checks for a single `get` call, you can use the `gdt.WithDebug()`
-function, like this test function demonstrates:
-
-file: `testdata/matches.yaml`:
-
-```yaml
-name: matches
-description: create a deployment and check the matches condition succeeds
-fixtures:
-  - kind
-tests:
-  - name: create-deployment
-    kube:
-      create: testdata/manifests/nginx-deployment.yaml
-  - name: deployment-exists
-    kube:
-      get: deployments/nginx
-    assert:
-      matches:
-        spec:
-          replicas: 2
-          template:
-            metadata:
-              labels:
-                app: nginx
-        status:
-          readyReplicas: 2
-  - name: delete-deployment
-    kube:
-      delete: deployments/nginx
-```
-
-file: `matches_test.go`
-
-```go
-import (
-    "github.com/gdt-dev/gdt"
-    _ "github.com/gdt-dev/kube"
-    kindfix "github.com/gdt-dev/kube/fixture/kind"
-)
-
-func TestMatches(t *testing.T) {
-	fp := filepath.Join("testdata", "matches.yaml")
-
-	kfix := kindfix.New()
-
-	s, err := gdt.From(fp)
-
-	ctx := gdt.NewContext(gdt.WithDebug())
-	ctx = gdt.RegisterFixture(ctx, "kind", kfix)
-	s.Run(ctx, t)
-}
-```
-
-Here's what running `go test -v matches_test.go` would look like:
-
-```
-$ go test -v matches_test.go
-=== RUN   TestMatches
-=== RUN   TestMatches/matches
-=== RUN   TestMatches/matches/create-deployment
-=== RUN   TestMatches/matches/deployment-exists
-deployment-exists (try 1 after 1.303µs) ok: false, terminal: false
-deployment-exists (try 1 after 1.303µs) failure: assertion failed: match field not equal: $.status.readyReplicas not present in subject
-deployment-exists (try 2 after 595.62786ms) ok: false, terminal: false
-deployment-exists (try 2 after 595.62786ms) failure: assertion failed: match field not equal: $.status.readyReplicas not present in subject
-deployment-exists (try 3 after 1.020003807s) ok: false, terminal: false
-deployment-exists (try 3 after 1.020003807s) failure: assertion failed: match field not equal: $.status.readyReplicas not present in subject
-deployment-exists (try 4 after 1.760006109s) ok: false, terminal: false
-deployment-exists (try 4 after 1.760006109s) failure: assertion failed: match field not equal: $.status.readyReplicas had different values. expected 2 but found 1
-deployment-exists (try 5 after 2.772416449s) ok: true, terminal: false
-=== RUN   TestMatches/matches/delete-deployment
---- PASS: TestMatches (3.32s)
-    --- PASS: TestMatches/matches (3.30s)
-        --- PASS: TestMatches/matches/create-deployment (0.01s)
-        --- PASS: TestMatches/matches/deployment-exists (2.78s)
-        --- PASS: TestMatches/matches/delete-deployment (0.02s)
-PASS
-ok  	command-line-arguments	3.683s
-```
-
-You can see from the debug output above that `gdt` created the Deployment and
-then did a `kube.get` for the `deployments/nginx` Deployment. Initially
-(attempt 1), the `assert.matches` assertion failed because the
-`status.readyReplicas` field was not present in the returned resource. `gdt`
-retried the `kube.get` call 4 more times (attempts 2-5), with attempts 2 and 3
-failed the existence check for the `status.readyReplicas` field and attempt 4
-failing the *value* check for the `status.readyReplicas` field being `1`
-instead of the expected `2`. Finally, when the Deployment was completely rolled
-out, attempt 5 succeeded in all the `assert.matches` assertions.
-
 ## Determining Kubernetes config, context and namespace values
 
 When evaluating how to construct a Kubernetes client `gdt-kube` uses the following
@@ -881,11 +788,77 @@ tests:
  - kube.get: pods/nginx
 ```
 
+#### Retaining and deleting KinD clusters
+
+The default behaviour of the `KindFixture` is to delete the KinD cluster when
+the Fixture's `Stop()` method is called, but **only if the KinD cluster did not
+previously exist before the Fixture's `Start()` method was called**.
+
+If you want to *always* ensure that a KinD cluster is deleted when the
+`KindFixture` is stopped, use the `fixtures.kind.WithDeleteOnStop()` function:
+
+```go
+import (
+    "github.com/gdt-dev/gdt"
+    gdtkube "github.com/gdt-dev/kube"
+    gdtkind "github.com/gdt-dev/kube/fixtures/kind"
+)
+
+func TestExample(t *testing.T) {
+    s, err := gdt.From("path/to/test.yaml")
+    if err != nil {
+        t.Fatalf("failed to load tests: %s", err)
+    }
+
+    ctx := context.Background()
+    ctx = gdt.RegisterFixture(
+        ctx, "kind", gdtkind.New(),
+        gdtkind.WithDeleteOnStop(),
+    )
+    err = s.Run(ctx, t)
+    if err != nil {
+        t.Fatalf("failed to run tests: %s", err)
+    }
+}
+```
+
+Likewise, the default behaviour of the `KindFixture` is to retain the KinD
+cluster when the Fixture's `Stop()` method is called but **only if the KinD
+cluster previously existed before the Fixture's `Start()` method was called**.
+
+If you want to *always* ensure a KinD cluster is retained, even if the
+KindFixture created the KinD cluster, use the
+`fixtures.kind.WithRetainOnStop()` function:
+
+```go
+import (
+    "github.com/gdt-dev/gdt"
+    gdtkube "github.com/gdt-dev/kube"
+    gdtkind "github.com/gdt-dev/kube/fixtures/kind"
+)
+
+func TestExample(t *testing.T) {
+    s, err := gdt.From("path/to/test.yaml")
+    if err != nil {
+        t.Fatalf("failed to load tests: %s", err)
+    }
+
+    ctx := context.Background()
+    ctx = gdt.RegisterFixture(
+        ctx, "kind", gdtkind.New(),
+        gdtkind.WithRetainOnStop(),
+    )
+    err = s.Run(ctx, t)
+    if err != nil {
+        t.Fatalf("failed to run tests: %s", err)
+    }
+}
+```
+
 #### Passing a KinD configuration
 
 You may want to pass a custom KinD configuration resource by using the
 `fixtures.kind.WithConfigPath()` modifier:
-
 
 ```go
 import (
@@ -914,15 +887,6 @@ func TestExample(t *testing.T) {
 }
 ```
 
-In your test file, you would list the "kind" fixture in the `fixtures` list:
-
-```yaml
-name: example-using-kind
-fixtures:
- - kind
-tests:
- - kube.get: pods/nginx
-```
 ## Contributing and acknowledgements
 
 `gdt` was inspired by [Gabbi](https://github.com/cdent/gabbi), the excellent

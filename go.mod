@@ -3,8 +3,7 @@ module github.com/gdt-dev/kube
 go 1.21
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/gdt-dev/gdt v1.6.2
+	github.com/gdt-dev/gdt v1.8.0
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
@@ -19,6 +18,7 @@ require (
 	github.com/PaesslerAG/gval v1.0.0 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect

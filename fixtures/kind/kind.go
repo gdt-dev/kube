@@ -57,7 +57,7 @@ type KindFixture struct {
 	ConfigPath string
 }
 
-func (f *KindFixture) Start(ctx context.Context) {
+func (f *KindFixture) Start(ctx context.Context) error {
 	ctx = gdtcontext.PushTrace(ctx, "fixtures.kind.start")
 	defer func() {
 		ctx = gdtcontext.PopTrace(ctx)
@@ -68,7 +68,7 @@ func (f *KindFixture) Start(ctx context.Context) {
 	if f.isRunning() {
 		debug.Println(ctx, "cluster %s already running", f.ClusterName)
 		f.runningBeforeStart = true
-		return
+		return nil
 	}
 	opts := []cluster.CreateOption{}
 	if f.ConfigPath != "" {
@@ -79,13 +79,14 @@ func (f *KindFixture) Start(ctx context.Context) {
 		opts = append(opts, cluster.CreateWithConfigFile(f.ConfigPath))
 	}
 	if err := f.provider.Create(f.ClusterName, opts...); err != nil {
-		panic(err)
+		return err
 	}
 	debug.Println(ctx, "cluster %s successfully created", f.ClusterName)
 	if !f.retainOnStop {
 		f.deleteOnStop = true
 		debug.Println(ctx, "cluster %s will be deleted on stop", f.ClusterName)
 	}
+	return nil
 }
 
 func (f *KindFixture) isRunning() bool {

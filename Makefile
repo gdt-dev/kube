@@ -42,3 +42,6 @@ test-kind-simple:
 test-all: test kind-clear-clusters
 	@go test -v ./fixtures/kind/kind_test.go
 	@go test -v ./placement_test.go
+
+test-placement: clear-test-cache kind-clear-clusters
+	@go test -v ./placement_test.go

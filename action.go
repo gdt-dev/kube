@@ -12,7 +12,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"testing"
 
 	"github.com/gdt-dev/gdt/debug"
 	gdterrors "github.com/gdt-dev/gdt/errors"
@@ -93,23 +92,21 @@ func (a *Action) getCommand() string {
 // command is a List, `out` will be a `*unstructured.UnstructuredList`.
 func (a *Action) Do(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	ns string,
 	out *interface{},
 ) error {
 	cmd := a.getCommand()
 
-	debug.Println(ctx, "kube: %s [ns: %s]", cmd, ns)
 	switch cmd {
 	case "get":
-		return a.get(ctx, t, c, ns, out)
+		return a.get(ctx, c, ns, out)
 	case "create":
-		return a.create(ctx, t, c, ns, out)
+		return a.create(ctx, c, ns, out)
 	case "delete":
-		return a.delete(ctx, t, c, ns)
+		return a.delete(ctx, c, ns)
 	case "apply":
-		return a.apply(ctx, t, c, ns, out)
+		return a.apply(ctx, c, ns, out)
 	default:
 		return fmt.Errorf("unknown command")
 	}
@@ -120,7 +117,6 @@ func (a *Action) Do(
 // `out` with the response value.
 func (a *Action) get(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	ns string,
 	out *interface{},
@@ -134,13 +130,13 @@ func (a *Action) get(
 		return err
 	}
 	if name == "" {
-		list, err := a.doList(ctx, t, c, res, ns)
+		list, err := a.doList(ctx, c, res, ns)
 		if err == nil {
 			*out = list
 		}
 		return err
 	} else {
-		obj, err := a.doGet(ctx, t, c, res, ns, name)
+		obj, err := a.doGet(ctx, c, res, ns, name)
 		if err == nil {
 			*out = obj
 		}
@@ -151,22 +147,33 @@ func (a *Action) get(
 // doList performs the List() call for a supplied resource kind
 func (a *Action) doList(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	res schema.GroupVersionResource,
 	ns string,
 ) (*unstructured.UnstructuredList, error) {
+	resName := res.Resource
+	labelSelString := ""
 	opts := metav1.ListOptions{}
 	withlabels := a.Get.Labels()
 	if withlabels != nil {
 		// We already validated the label selector during parse-time
-		opts.LabelSelector = labels.Set(withlabels).String()
+		labelsStr := labels.Set(withlabels).String()
+		labelSelString = fmt.Sprintf(" (labels: %s)", labelsStr)
+		opts.LabelSelector = labelsStr
 	}
 	if c.resourceNamespaced(res) {
+		debug.Println(
+			ctx, "kube.get: %s%s (ns: %s)",
+			resName, labelSelString, ns,
+		)
 		return c.client.Resource(res).Namespace(ns).List(
 			ctx, opts,
 		)
 	}
+	debug.Println(
+		ctx, "kube.get: %s%s (non-namespaced resource)",
+		resName, labelSelString,
+	)
 	return c.client.Resource(res).List(
 		ctx, opts,
 	)
@@ -175,19 +182,27 @@ func (a *Action) doList(
 // doGet performs the Get() call for a supplied resource kind and name
 func (a *Action) doGet(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	res schema.GroupVersionResource,
 	ns string,
 	name string,
 ) (*unstructured.Unstructured, error) {
+	resName := res.Resource
 	if c.resourceNamespaced(res) {
+		debug.Println(
+			ctx, "kube.get: %s/%s (ns: %s)",
+			resName, name, ns,
+		)
 		return c.client.Resource(res).Namespace(ns).Get(
 			ctx,
 			name,
 			metav1.GetOptions{},
 		)
 	}
+	debug.Println(
+		ctx, "kube.get: %s/%s (non-namespaced resource)",
+		resName, name,
+	)
 	return c.client.Resource(res).Get(
 		ctx,
 		name,
@@ -199,7 +214,6 @@ func (a *Action) doGet(
 // evaluates any assertions that have been set for the returned results.
 func (a *Action) create(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	ns string,
 	out *interface{},
@@ -244,6 +258,8 @@ func (a *Action) create(
 		if err != nil {
 			return err
 		}
+		resName := res.Resource
+		debug.Println(ctx, "kube.create: %s (ns: %s)", resName, ons)
 		obj, err := c.client.Resource(res).Namespace(ons).Create(
 			ctx,
 			obj,
@@ -262,7 +278,6 @@ func (a *Action) create(
 // evaluates any assertions that have been set for the returned results.
 func (a *Action) apply(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	ns string,
 	out *interface{},
@@ -307,6 +322,8 @@ func (a *Action) apply(
 		if err != nil {
 			return err
 		}
+		resName := res.Resource
+		debug.Println(ctx, "kube.apply: %s (ns: %s)", resName, ons)
 		obj, err := c.client.Resource(res).Namespace(ns).Apply(
 			ctx,
 			// NOTE(jaypipes): Not sure why a separate name argument is
@@ -332,7 +349,6 @@ func (a *Action) apply(
 // and evaluates any assertions that have been set for the returned results.
 func (a *Action) delete(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	ns string,
 ) error {
@@ -362,7 +378,7 @@ func (a *Action) delete(
 			if ons == "" {
 				ons = ns
 			}
-			if err = a.doDelete(ctx, t, c, res, name, ns); err != nil {
+			if err = a.doDelete(ctx, c, res, name, ns); err != nil {
 				return err
 			}
 		}
@@ -378,20 +394,24 @@ func (a *Action) delete(
 		return err
 	}
 	if name == "" {
-		return a.doDeleteCollection(ctx, t, c, res, ns)
+		return a.doDeleteCollection(ctx, c, res, ns)
 	}
-	return a.doDelete(ctx, t, c, res, ns, name)
+	return a.doDelete(ctx, c, res, ns, name)
 }
 
 // doDelete performs the Delete() call on a kind and name
 func (a *Action) doDelete(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	res schema.GroupVersionResource,
 	ns string,
 	name string,
 ) error {
+	resName := res.Resource
+	debug.Println(
+		ctx, "kube.delete: %s/%s (ns: %s)",
+		resName, name, ns,
+	)
 	return c.client.Resource(res).Namespace(ns).Delete(
 		ctx,
 		name,
@@ -403,21 +423,28 @@ func (a *Action) doDelete(
 // resource kind
 func (a *Action) doDeleteCollection(
 	ctx context.Context,
-	t *testing.T,
 	c *connection,
 	res schema.GroupVersionResource,
 	ns string,
 ) error {
-	listOpts := metav1.ListOptions{}
+	opts := metav1.ListOptions{}
 	withlabels := a.Delete.Labels()
+	labelSelString := ""
 	if withlabels != nil {
 		// We already validated the label selector during parse-time
-		listOpts.LabelSelector = labels.Set(withlabels).String()
+		labelsStr := labels.Set(withlabels).String()
+		labelSelString = fmt.Sprintf(" (labels: %s)", labelsStr)
+		opts.LabelSelector = labelsStr
 	}
+	resName := res.Resource
+	debug.Println(
+		ctx, "kube.delete: %s%s (ns: %s)",
+		resName, labelSelString, ns,
+	)
 	return c.client.Resource(res).Namespace(ns).DeleteCollection(
 		ctx,
 		metav1.DeleteOptions{},
-		listOpts,
+		opts,
 	)
 }
 

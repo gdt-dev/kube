@@ -10,6 +10,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	// DefaultTimeout is the default timeout used for each individual test
+	// spec. Note that gdt's top-level Scenario.Run handles all timeout and
+	// retry behaviour.
+	DefaultTimeout = "5s"
+)
+
 func init() {
 	gdt.RegisterPlugin(Plugin())
 }
@@ -23,6 +30,12 @@ type plugin struct{}
 func (p *plugin) Info() gdttypes.PluginInfo {
 	return gdttypes.PluginInfo{
 		Name: pluginName,
+		Retry: &gdttypes.Retry{
+			Exponential: true,
+		},
+		Timeout: &gdttypes.Timeout{
+			After: DefaultTimeout,
+		},
 	}
 }
 

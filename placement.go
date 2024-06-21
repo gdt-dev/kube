@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strings"
 
-	gdtcontext "github.com/gdt-dev/gdt/context"
 	"github.com/gdt-dev/gdt/debug"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -126,10 +125,6 @@ func (a *assertions) placementSpreadOK(
 	if len(topoKeys) == 0 {
 		return true
 	}
-	ctx = gdtcontext.PushTrace(ctx, "assert-placement-spread")
-	defer func() {
-		ctx = gdtcontext.PopTrace(ctx)
-	}()
 	nodes := getNodes(ctx, a.c)
 	domainNodes := map[string][]string{}
 	for _, k := range topoKeys {
@@ -164,20 +159,20 @@ func (a *assertions) placementSpreadOK(
 	// the min and max number of pods on each domain is not greater than 1.
 	for domain, nodes := range domainNodes {
 		debug.Println(
-			ctx, "domain: %s, unique nodes: %d",
+			ctx, "placement-spread: domain: %s, unique nodes: %d",
 			domain, len(nodes),
 		)
 		if len(nodes) > 0 {
 			nodeCounts := lo.Values(podDomains[domain])
 
 			debug.Println(
-				ctx, "domain: %s, pods per node: %d",
+				ctx, "placement-spread: domain: %s, pods per node: %d",
 				domain, nodeCounts,
 			)
 			minCount := lo.Min(nodeCounts)
 			maxCount := lo.Max(nodeCounts)
 			skew := maxCount - minCount
-			if skew > 1 {
+			if skew >= 1 {
 				msg := fmt.Sprintf(
 					"found uneven spread skew of %d for domain %s",
 					skew, domain,

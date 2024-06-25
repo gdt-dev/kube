@@ -12,9 +12,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gdt-dev/gdt/api"
 	gdtjson "github.com/gdt-dev/gdt/assertion/json"
-	gdterrors "github.com/gdt-dev/gdt/errors"
-	gdttypes "github.com/gdt-dev/gdt/types"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -166,8 +165,8 @@ type Expect struct {
 // conditionMatch is a struct with fields that we will match a resource's
 // `Condition` against.
 type conditionMatch struct {
-	Status *gdttypes.FlexStrings `yaml:"status,omitempty"`
-	Reason string                `yaml:"reason,omitempty"`
+	Status *api.FlexStrings `yaml:"status,omitempty"`
+	Reason string           `yaml:"reason,omitempty"`
 }
 
 // ConditionMatch can be a string (the ConditionStatus to match), a slice of
@@ -182,7 +181,7 @@ type ConditionMatch struct {
 // ConditionMatch can be either a string, a slice of strings, or an object with .
 func (m *ConditionMatch) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind == yaml.ScalarNode || node.Kind == yaml.SequenceNode {
-		var fs gdttypes.FlexStrings
+		var fs api.FlexStrings
 		if err := node.Decode(&fs); err != nil {
 			return ConditionMatchInvalid(node, err)
 		}
@@ -203,10 +202,10 @@ func (m *ConditionMatch) UnmarshalYAML(node *yaml.Node) error {
 type PlacementAssertion struct {
 	// Spread contains zero or more topology keys that gdt-kube will assert an
 	// even spread across.
-	Spread *gdttypes.FlexStrings `yaml:"spread,omitempty"`
+	Spread *api.FlexStrings `yaml:"spread,omitempty"`
 	// Pack contains zero or more topology keys that gdt-kube will assert
 	// bin-packing of resources within.
-	Pack *gdttypes.FlexStrings `yaml:"pack,omitempty"`
+	Pack *api.FlexStrings `yaml:"pack,omitempty"`
 }
 
 // assertions contains all assertions made for the exec test
@@ -246,7 +245,7 @@ func (a *assertions) OK(ctx context.Context) bool {
 	exp := a.exp
 	if exp == nil {
 		if a.err != nil {
-			a.Fail(gdterrors.UnexpectedError(a.err))
+			a.Fail(api.UnexpectedError(a.err))
 			return false
 		}
 		return true
@@ -309,16 +308,16 @@ func (a *assertions) errorOK() bool {
 	}
 	if exp.Error != "" && a.r != nil {
 		if a.err == nil {
-			a.Fail(gdterrors.UnexpectedError(a.err))
+			a.Fail(api.UnexpectedError(a.err))
 			return false
 		}
 		if !strings.Contains(a.err.Error(), exp.Error) {
-			a.Fail(gdterrors.NotIn(a.err.Error(), exp.Error))
+			a.Fail(api.NotIn(a.err.Error(), exp.Error))
 			return false
 		}
 	}
 	if a.err != nil {
-		a.Fail(gdterrors.UnexpectedError(a.err))
+		a.Fail(api.UnexpectedError(a.err))
 		return false
 	}
 	return true
@@ -368,7 +367,7 @@ func (a *assertions) lenOK() bool {
 		list, ok := a.r.(*unstructured.UnstructuredList)
 		if ok && list != nil {
 			if len(list.Items) != *exp.Len {
-				a.Fail(gdterrors.NotEqualLength(*exp.Len, len(list.Items)))
+				a.Fail(api.NotEqualLength(*exp.Len, len(list.Items)))
 				return false
 			}
 		}
@@ -402,7 +401,7 @@ func (a *assertions) matchesOK() bool {
 		//	for _, obj := range list.Items {
 		//      diff := compareResourceToMatchObject(obj, matchObj)
 		//
-		//		a.Fail(gdterrors.NotEqualLength(*exp.Len, len(list.Items)))
+		//		a.Fail(api.NotEqualLength(*exp.Len, len(list.Items)))
 		//		return false
 		//	}
 		//}
@@ -435,7 +434,7 @@ func (a *assertions) conditionsOK() bool {
 		//	for _, obj := range list.Items {
 		//      diff := compareResourceToMatchObject(obj, matchObj)
 		//
-		//		a.Fail(gdterrors.NotEqualLength(*exp.Len, len(list.Items)))
+		//		a.Fail(api.NotEqualLength(*exp.Len, len(list.Items)))
 		//		return false
 		//	}
 		//}
@@ -511,7 +510,7 @@ func newAssertions(
 	exp *Expect,
 	err error,
 	r interface{},
-) gdttypes.Assertions {
+) api.Assertions {
 	return &assertions{
 		c:        c,
 		failures: []error{},

@@ -7,8 +7,7 @@ package kube
 import (
 	"os"
 
-	"github.com/gdt-dev/gdt/errors"
-	gdttypes "github.com/gdt-dev/gdt/types"
+	"github.com/gdt-dev/gdt/api"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,21 +38,21 @@ type Defaults struct {
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return errors.ExpectedMapAt(node)
+		return api.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "kube":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			hd := kubeDefaults{}
 			if err := valNode.Decode(&hd); err != nil {
@@ -86,7 +85,7 @@ func (d *Defaults) validate() error {
 }
 
 // fromBaseDefaults returns an gdt-kube plugin-specific Defaults from a Spec
-func fromBaseDefaults(base *gdttypes.Defaults) *Defaults {
+func fromBaseDefaults(base *api.Defaults) *Defaults {
 	if base == nil {
 		return nil
 	}

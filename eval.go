@@ -7,14 +7,13 @@ package kube
 import (
 	"context"
 
-	gdterrors "github.com/gdt-dev/gdt/errors"
-	"github.com/gdt-dev/gdt/result"
+	"github.com/gdt-dev/gdt/api"
 )
 
 // Eval performs an action and evaluates the results of that action, returning
 // a Result that informs the Scenario about what failed or succeeded. A new
 // Kubernetes client request is made during this call.
-func (s *Spec) Eval(ctx context.Context) (*result.Result, error) {
+func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 	c, err := s.connect(ctx)
 	if err != nil {
 		return nil, ConnectError(err)
@@ -25,16 +24,16 @@ func (s *Spec) Eval(ctx context.Context) (*result.Result, error) {
 	var out interface{}
 	err = s.Kube.Do(ctx, c, ns, &out)
 	if err != nil {
-		if err == gdterrors.ErrTimeoutExceeded {
-			return result.New(result.WithFailures(gdterrors.ErrTimeoutExceeded)), nil
+		if err == api.ErrTimeoutExceeded {
+			return api.NewResult(api.WithFailures(api.ErrTimeoutExceeded)), nil
 		}
-		if err == gdterrors.RuntimeError {
+		if err == api.RuntimeError {
 			return nil, err
 		}
 	}
 	a := newAssertions(c, s.Assert, err, out)
 	if a.OK(ctx) {
-		return result.New(), nil
+		return api.NewResult(), nil
 	}
-	return result.New(result.WithFailures(a.Failures()...)), nil
+	return api.NewResult(api.WithFailures(a.Failures()...)), nil
 }

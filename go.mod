@@ -3,7 +3,7 @@ module github.com/gdt-dev/kube
 go 1.21
 
 require (
-	github.com/gdt-dev/gdt v1.8.0
+	github.com/gdt-dev/gdt v1.9.0
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1

@@ -7,16 +7,15 @@ package kube
 import (
 	"os"
 
+	"github.com/gdt-dev/gdt/api"
 	gdtjson "github.com/gdt-dev/gdt/assertion/json"
-	"github.com/gdt-dev/gdt/errors"
-	gdttypes "github.com/gdt-dev/gdt/types"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 )
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return errors.ExpectedMapAt(node)
+		return api.ExpectedMapAt(node)
 	}
 	// We do an initial pass over the shortcut fields, then all the
 	// non-shortcut fields after that.
@@ -27,14 +26,14 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "kube.get":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			if ks != nil {
 				return MoreThanOneKubeActionAt(valNode)
@@ -48,7 +47,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			s.Kube = ks
 		case "kube.create":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			if ks != nil {
 				return MoreThanOneKubeActionAt(valNode)
@@ -56,7 +55,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			v := valNode.Value
 			if probablyFilePath(v) {
 				if !fileExists(v) {
-					return errors.FileNotFound(v, valNode)
+					return api.FileNotFound(v, valNode)
 				}
 			}
 			ks = &KubeSpec{}
@@ -64,7 +63,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			s.Kube = ks
 		case "kube.apply":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			if ks != nil {
 				return MoreThanOneKubeActionAt(valNode)
@@ -75,7 +74,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			s.Kube = ks
 		case "kube.delete":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			if ks != nil {
 				return MoreThanOneKubeActionAt(valNode)
@@ -93,14 +92,14 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "kube":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			if ks != nil {
 				return EitherShortcutOrKubeSpecAt(valNode)
@@ -111,7 +110,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			s.Kube = ks
 		case "assert":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			var e *Expect
 			if err := valNode.Decode(&e); err != nil {
@@ -121,10 +120,10 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 		case "kube.get", "kube.create", "kube.delete", "kube.apply":
 			continue
 		default:
-			if lo.Contains(gdttypes.BaseSpecFields, key) {
+			if lo.Contains(api.BaseSpecFields, key) {
 				continue
 			}
-			return errors.UnknownFieldAt(key, keyNode)
+			return api.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil
@@ -132,30 +131,30 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 
 func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return errors.ExpectedMapAt(node)
+		return api.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "config":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			fp := valNode.Value
 			if !fileExists(fp) {
-				return errors.FileNotFound(fp, valNode)
+				return api.FileNotFound(fp, valNode)
 			}
 			s.Config = fp
 		case "context":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			// NOTE(jaypipes): We can't validate the kubectx exists yet because
 			// fixtures may advertise a kube config and we look up the context
@@ -163,14 +162,14 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 			s.Context = valNode.Value
 		case "namespace":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			s.Namespace = valNode.Value
 		case "get", "create", "apply", "delete":
 			// Because Action is an embedded struct and we parse it below, just
 			// ignore these fields in the top-level `kube:` field for now.
 		default:
-			return errors.UnknownFieldAt(key, keyNode)
+			return api.UnknownFieldAt(key, keyNode)
 		}
 	}
 	var a Action
@@ -183,43 +182,43 @@ func (s *KubeSpec) UnmarshalYAML(node *yaml.Node) error {
 
 func (a *Action) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return errors.ExpectedMapAt(node)
+		return api.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "apply":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			v := valNode.Value
 			if probablyFilePath(v) {
 				if !fileExists(v) {
-					return errors.FileNotFound(v, valNode)
+					return api.FileNotFound(v, valNode)
 				}
 			}
 			a.Apply = v
 		case "create":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			v := valNode.Value
 			if probablyFilePath(v) {
 				if !fileExists(v) {
-					return errors.FileNotFound(v, valNode)
+					return api.FileNotFound(v, valNode)
 				}
 			}
 			a.Create = v
 		case "get":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedScalarOrMapAt(valNode)
+				return api.ExpectedScalarOrMapAt(valNode)
 			}
 			var v *ResourceIdentifier
 			if err := valNode.Decode(&v); err != nil {
@@ -228,7 +227,7 @@ func (a *Action) UnmarshalYAML(node *yaml.Node) error {
 			a.Get = v
 		case "delete":
 			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedScalarOrMapAt(valNode)
+				return api.ExpectedScalarOrMapAt(valNode)
 			}
 			var v *ResourceIdentifierOrFile
 			if err := valNode.Decode(&v); err != nil {
@@ -245,21 +244,21 @@ func (a *Action) UnmarshalYAML(node *yaml.Node) error {
 
 func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return errors.ExpectedMapAt(node)
+		return api.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return errors.ExpectedScalarAt(keyNode)
+			return api.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "error":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			var v string
 			if err := valNode.Decode(&v); err != nil {
@@ -268,7 +267,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.Error = v
 		case "len":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			var v *int
 			if err := valNode.Decode(&v); err != nil {
@@ -277,7 +276,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.Len = v
 		case "unknown":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			var v bool
 			if err := valNode.Decode(&v); err != nil {
@@ -286,7 +285,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.Unknown = v
 		case "notfound":
 			if valNode.Kind != yaml.ScalarNode {
-				return errors.ExpectedScalarAt(valNode)
+				return api.ExpectedScalarAt(valNode)
 			}
 			var v bool
 			if err := valNode.Decode(&v); err != nil {
@@ -295,7 +294,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.NotFound = v
 		case "json":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			var v *gdtjson.Expect
 			if err := valNode.Decode(&v); err != nil {
@@ -304,7 +303,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.JSON = v
 		case "conditions":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			var v map[string]*ConditionMatch
 			if err := valNode.Decode(&v); err != nil {
@@ -328,7 +327,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 				}
 				if probablyFilePath(v) {
 					if !fileExists(v) {
-						return errors.FileNotFound(v, valNode)
+						return api.FileNotFound(v, valNode)
 					}
 				}
 				// inline YAML. check it can be unmarshaled into a
@@ -343,7 +342,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			}
 		case "placement":
 			if valNode.Kind != yaml.MappingNode {
-				return errors.ExpectedMapAt(valNode)
+				return api.ExpectedMapAt(valNode)
 			}
 			var v *PlacementAssertion
 			if err := valNode.Decode(&v); err != nil {
@@ -351,7 +350,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			}
 			e.Placement = v
 		default:
-			return errors.UnknownFieldAt(key, keyNode)
+			return api.UnknownFieldAt(key, keyNode)
 		}
 	}
 	return nil

@@ -6,7 +6,6 @@ package kube_test
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/gdt-dev/gdt"
@@ -15,11 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func currentDir() string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Dir(filename)
-}
 
 func TestFailureBadDefaults(t *testing.T) {
 	assert := assert.New(t)

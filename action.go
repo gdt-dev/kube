@@ -378,7 +378,7 @@ func (a *Action) delete(
 			if ons == "" {
 				ons = ns
 			}
-			if err = a.doDelete(ctx, c, res, name, ns); err != nil {
+			if err = a.doDelete(ctx, c, res, name, ons); err != nil {
 				return err
 			}
 		}

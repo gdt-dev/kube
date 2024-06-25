@@ -6,7 +6,7 @@ package kube
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -42,7 +42,7 @@ func compareConditions(
 		panic(msg)
 	}
 	if (!found || len(conds) == 0) && len(expected) != 0 {
-		for condType, _ := range expected {
+		for condType := range expected {
 			d.Add(fmt.Sprintf("no condition with type %q found", condType))
 		}
 		return d
@@ -130,13 +130,13 @@ func compareConditions(
 // map[string]interface{} is the collection of resource fields that we will
 // match against.
 func matchObjectFromAny(m interface{}) map[string]interface{} {
-	switch m.(type) {
+	switch m := m.(type) {
 	case string:
 		var err error
 		var b []byte
-		v := m.(string)
+		v := m
 		if probablyFilePath(v) {
-			b, err = ioutil.ReadFile(v)
+			b, err = os.ReadFile(v)
 			if err != nil {
 				// NOTE(jaypipes): We already validated that the file exists at
 				// parse time. If we get an error here, just panic cuz there's
@@ -155,7 +155,7 @@ func matchObjectFromAny(m interface{}) map[string]interface{} {
 		}
 		return obj
 	case map[string]interface{}:
-		return m.(map[string]interface{})
+		return m
 	}
 	return map[string]interface{}{}
 }
@@ -238,7 +238,7 @@ func collectFieldDifferences(
 		}
 		return
 	case int, int8, int16, int32, int64:
-		switch subject.(type) {
+		switch subject := subject.(type) {
 		case int, int8, int16, int32, int64:
 			mv := toInt64(match)
 			sv := toInt64(subject)
@@ -261,8 +261,7 @@ func collectFieldDifferences(
 			}
 		case string:
 			mv := toInt64(match)
-			ss := subject.(string)
-			sv, err := strconv.Atoi(ss)
+			sv, err := strconv.Atoi(subject)
 			if err != nil {
 				diff := fmt.Sprintf(
 					"%s had different values. expected %v but found %v",
@@ -296,8 +295,7 @@ func collectFieldDifferences(
 			}
 		case string:
 			mv, _ := match.(string)
-			sv, _ := subject.(string)
-			if mv != sv {
+			if mv != subject {
 				diff := fmt.Sprintf(
 					"%s had different values. expected %v but found %v",
 					fp, match, subject,
@@ -362,34 +360,34 @@ func typesComparable(a, b interface{}) bool {
 
 // toUint64 takes an interface and returns a uint64
 func toUint64(v interface{}) uint64 {
-	switch v.(type) {
+	switch v := v.(type) {
 	case uint64:
-		return v.(uint64)
+		return v
 	case uint8:
-		return uint64(v.(uint8))
+		return uint64(v)
 	case uint16:
-		return uint64(v.(uint16))
+		return uint64(v)
 	case uint32:
-		return uint64(v.(uint32))
+		return uint64(v)
 	case uint:
-		return uint64(v.(uint))
+		return uint64(v)
 	}
 	return 0
 }
 
 // toInt64 takes an interface and returns an int64
 func toInt64(v interface{}) int64 {
-	switch v.(type) {
+	switch v := v.(type) {
 	case int64:
-		return v.(int64)
+		return v
 	case int8:
-		return int64(v.(int8))
+		return int64(v)
 	case int16:
-		return int64(v.(int16))
+		return int64(v)
 	case int32:
-		return int64(v.(int32))
+		return int64(v)
 	case int:
-		return int64(v.(int))
+		return int64(v)
 	}
 	return 0
 }

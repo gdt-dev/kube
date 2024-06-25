@@ -356,24 +356,6 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-// expandShortcut looks at the shortcut fields (e.g. `kube.create`) and expands
-// the shortcut into a full KubeSpec.
-func expandShortcut(s *Spec) {
-	if s.Kube != nil {
-		return
-	}
-	ks := &KubeSpec{
-		Action: Action{},
-	}
-	if s.KubeCreate != "" {
-		ks.Create = s.KubeCreate
-	}
-	if s.KubeApply != "" {
-		ks.Apply = s.KubeApply
-	}
-	s.Kube = ks
-}
-
 // moreThanOneAction returns true if the test author has specified more than a
 // single action in the KubeSpec.
 func moreThanOneAction(a *Action) bool {

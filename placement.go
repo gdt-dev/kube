@@ -35,6 +35,9 @@ func getNodes(
 		Kind: "Node",
 	}
 	res, err := c.gvrFromGVK(gvk)
+	if err != nil {
+		panic(err)
+	}
 	opts := metav1.ListOptions{}
 	list, err := c.client.Resource(res).Namespace("").List(
 		ctx, opts,
@@ -94,6 +97,9 @@ func getPods(
 		Kind: "Pod",
 	}
 	res, err := c.gvrFromGVK(gvk)
+	if err != nil {
+		panic(err)
+	}
 	opts := client.ListOptions{
 		LabelSelector: ls,
 		Namespace:     ns,

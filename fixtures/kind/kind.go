@@ -144,7 +144,7 @@ func (f *KindFixture) waitForDefaultServiceAccount(ctx context.Context) error {
 	)
 	ticker := backoff.NewTicker(bo)
 	attempts := 1
-	for _ = range ticker.C {
+	for range ticker.C {
 		found := true
 		_, err = clientset.CoreV1().ServiceAccounts("default").Get(context.TODO(), "default", metav1.GetOptions{})
 		if err != nil {

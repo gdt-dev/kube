@@ -328,36 +328,6 @@ func (a *assertions) expectsNotFound() bool {
 	return (exp.Len != nil && *exp.Len == 0) || exp.NotFound
 }
 
-// notFoundOK returns true if the supplied error and response matches the
-// NotFound condition and the Len==0 condition, false otherwise
-func (a *assertions) notFoundOK() bool {
-	if a.expectsNotFound() {
-		// First check if the error is like one returned from Get or Delete
-		// that has a 404 ErrStatus.Code in it
-		apierr, ok := a.err.(*apierrors.StatusError)
-		if ok {
-			if http.StatusNotFound != int(apierr.ErrStatus.Code) {
-				msg := fmt.Sprintf("got status code %d", apierr.ErrStatus.Code)
-				a.Fail(ExpectedNotFound(msg))
-				return false
-			}
-			return true
-		}
-		// Next check to see if the supplied resp is a list of objects returned
-		// by the dynamic client and if so, is that an empty list.
-		list, ok := a.r.(*unstructured.UnstructuredList)
-		if ok {
-			if len(list.Items) != 0 {
-				msg := fmt.Sprintf("got %d items", len(list.Items))
-				a.Fail(ExpectedNotFound(msg))
-				return false
-			}
-			return true
-		}
-	}
-	return true
-}
-
 // lenOK returns true if the subject matches the Len condition, false otherwise
 func (a *assertions) lenOK() bool {
 	exp := a.exp

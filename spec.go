@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	gdttypes "github.com/gdt-dev/gdt/types"
+	"github.com/gdt-dev/gdt/api"
 )
 
 // KubeSpec is the complex type containing all of the Kubernetes-specific
@@ -36,7 +36,7 @@ type KubeSpec struct {
 
 // Spec describes a test of a *single* Kubernetes API request and response.
 type Spec struct {
-	gdttypes.Spec
+	api.Spec
 	// Kube is the complex type containing all of the Kubernetes-specific
 	// actions and assertions. Most users will use the `kube.create`,
 	// `kube.apply` and `kube.describe` shortcut fields.
@@ -82,6 +82,24 @@ type Spec struct {
 	Assert *Expect `yaml:"assert,omitempty"`
 }
 
+func (s *Spec) Retry() *api.Retry {
+	if s.Spec.Retry != nil {
+		// The user may have overridden in the test spec file...
+		return s.Spec.Retry
+	}
+	if s.Kube.Action.Get != nil {
+		// returning nil here means the plugin's default will be used...
+		return nil
+	}
+	// for apply/create/delete, we don't want to retry...
+	return api.NoRetry
+}
+
+func (s *Spec) Timeout() *api.Timeout {
+	// returning nil here means the plugin's default will be used...
+	return nil
+}
+
 // Title returns a good name for the Spec
 func (s *Spec) Title() string {
 	// If the user did not specify a name for the test spec, just default
@@ -123,11 +141,11 @@ func probablyFilePath(subject string) bool {
 	return strings.ContainsRune(subject, '.')
 }
 
-func (s *Spec) SetBase(b gdttypes.Spec) {
+func (s *Spec) SetBase(b api.Spec) {
 	s.Spec = b
 }
 
-func (s *Spec) Base() *gdttypes.Spec {
+func (s *Spec) Base() *api.Spec {
 	return &s.Spec
 }
 

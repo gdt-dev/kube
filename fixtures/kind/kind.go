@@ -7,18 +7,28 @@ package kind
 import (
 	"context"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff"
+	"github.com/gdt-dev/gdt/api"
 	gdtcontext "github.com/gdt-dev/gdt/context"
 	"github.com/gdt-dev/gdt/debug"
-	gdttypes "github.com/gdt-dev/gdt/types"
 	"github.com/samber/lo"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/kind/pkg/cluster"
 	kindconst "sigs.k8s.io/kind/pkg/cluster/constants"
 
 	gdtkube "github.com/gdt-dev/kube"
 )
 
-// KindFixture implements `gdttypes.Fixture` and exposes connection/config
+var (
+	checkDefaultServiceAccountTimeout = time.Second * 15
+)
+
+// KindFixture implements `api.Fixture` and exposes connection/config
 // information about a running KinD cluster.
 type KindFixture struct {
 	// provider is the KinD cluster provider
@@ -68,7 +78,7 @@ func (f *KindFixture) Start(ctx context.Context) error {
 	if f.isRunning() {
 		debug.Println(ctx, "cluster %s already running", f.ClusterName)
 		f.runningBeforeStart = true
-		return nil
+		return f.waitForDefaultServiceAccount(ctx)
 	}
 	opts := []cluster.CreateOption{}
 	if f.ConfigPath != "" {
@@ -86,7 +96,7 @@ func (f *KindFixture) Start(ctx context.Context) error {
 		f.deleteOnStop = true
 		debug.Println(ctx, "cluster %s will be deleted on stop", f.ClusterName)
 	}
-	return nil
+	return f.waitForDefaultServiceAccount(ctx)
 }
 
 func (f *KindFixture) isRunning() bool {
@@ -98,6 +108,62 @@ func (f *KindFixture) isRunning() bool {
 		return false
 	}
 	return lo.Contains(clusterNames, f.ClusterName)
+}
+
+func (f *KindFixture) waitForDefaultServiceAccount(ctx context.Context) error {
+	// Sometimes it takes a little while for the default service account to
+	// exist for new clusters, and the default service account is required for
+	// a lot of testing, so we wait here until the default service account is
+	// ready to go...
+	cfg, err := f.provider.KubeConfig(f.ClusterName, false)
+	if err != nil {
+		return err
+	}
+	cc, err := clientcmd.Load([]byte(cfg))
+	if err != nil {
+		return err
+	}
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, checkDefaultServiceAccountTimeout)
+	defer cancel()
+	overrides := &clientcmd.ConfigOverrides{}
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	ccfg, err := clientcmd.NewNonInteractiveClientConfig(
+		*cc, "", overrides, rules,
+	).ClientConfig()
+	if err != nil {
+		return err
+	}
+	clientset, err := kubernetes.NewForConfig(ccfg)
+	if err != nil {
+		return err
+	}
+	bo := backoff.WithContext(
+		backoff.NewExponentialBackOff(),
+		ctx,
+	)
+	ticker := backoff.NewTicker(bo)
+	attempts := 1
+	for range ticker.C {
+		found := true
+		_, err = clientset.CoreV1().ServiceAccounts("default").Get(context.TODO(), "default", metav1.GetOptions{})
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			found = false
+		}
+		debug.Println(
+			ctx, "check for default service account: attempt %d, found: %v",
+			attempts, found,
+		)
+		attempts++
+		if found {
+			ticker.Stop()
+			break
+		}
+	}
+	return nil
 }
 
 func (f *KindFixture) Stop(ctx context.Context) {
@@ -216,7 +282,7 @@ func WithRetainOnStop() KindFixtureModifier {
 //   - "kube.config" returns the path of the kubeconfig file to use with this
 //     KinD cluster
 //   - "kube.context" returns the kubecontext to use with this KinD cluster
-func New(mods ...KindFixtureModifier) gdttypes.Fixture {
+func New(mods ...KindFixtureModifier) api.Fixture {
 	f := &KindFixture{
 		provider: cluster.NewProvider(),
 	}

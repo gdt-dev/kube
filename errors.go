@@ -7,7 +7,7 @@ package kube
 import (
 	"fmt"
 
-	gdterrors "github.com/gdt-dev/gdt/errors"
+	"github.com/gdt-dev/gdt/api"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -20,7 +20,7 @@ var (
 	ErrExpectedMapOrYAMLString = fmt.Errorf(
 		"%w: expected either map[string]interface{} "+
 			"or a string with embedded YAML",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrEitherShortcutOrKubeSpec is returned when the test author
 	// included both a shortcut (e.g. `kube.create` or `kube.apply`) AND the
@@ -28,7 +28,7 @@ var (
 	ErrEitherShortcutOrKubeSpec = fmt.Errorf(
 		"%w: either specify a full KubeSpec in the `kube` field or specify "+
 			"one of the shortcuts (e.g. `kube.create` or `kube.apply`",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrMoreThanOneKubeAction is returned when the test author
 	// included more than one Kubernetes action (e.g. `create` or `apply`) in
@@ -36,46 +36,46 @@ var (
 	ErrMoreThanOneKubeAction = fmt.Errorf(
 		"%w: you may only specify a single Kubernetes action field "+
 			"(e.g. `create`, `apply` or `delete`) in the `kube` object. ",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrKubeConfigNotFound is returned when a kubeconfig path points
 	// to a file that does not exist.
 	ErrKubeConfigNotFound = fmt.Errorf(
 		"%w: specified kube config path not found",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrResourceSpecifier is returned when the test author uses a
 	// resource specifier for the `kube.get` or `kube.delete` fields that is
 	// not valid.
 	ErrResourceSpecifierInvalid = fmt.Errorf(
 		"%w: invalid resource specifier",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrResourceSpecifierOrFilepath is returned when the test author
 	// uses a resource specifier for the `kube.delete` fields that is not valid
 	// or is not a filepath.
 	ErrResourceSpecifierInvalidOrFilepath = fmt.Errorf(
 		"%w: invalid resource specifier or filepath",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrMatchesInvalid is returned when the `Kube.Assert.Matches` value is
 	// malformed.
 	ErrMatchesInvalid = fmt.Errorf(
 		"%w: `kube.assert.matches` not well-formed",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrConditionMatchInvalid is returned when the `Kube.Assert.Conditions`
 	// value is malformed.
 	ErrConditionMatchInvalid = fmt.Errorf(
 		"%w: `kube.assert.conditions` not well-formed",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrWithLabelsOnlyGetDelete is returned when the test author included
 	// `kube.with.labels` but did not specify either `kube.get` or
 	// `kube.delete`.
 	ErrWithLabelsInvalid = fmt.Errorf(
 		"%w: with labels invalid",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrWithLabelsOnlyGetDelete is returned when the test author included
 	// `kube.with.labels` but did not specify either `kube.get` or
@@ -83,7 +83,7 @@ var (
 	ErrWithLabelsOnlyGetDelete = fmt.Errorf(
 		"%w: with labels may only be specified for "+
 			"`kube.get` or `kube.delete`",
-		gdterrors.ErrParse,
+		api.ErrParse,
 	)
 	// ErrResourceUnknown is returned when an unknown resource kind is
 	// specified for a create/apply/delete target. This is a runtime error
@@ -91,32 +91,32 @@ var (
 	// kind is valid.
 	ErrResourceUnknown = fmt.Errorf(
 		"%w: resource unknown",
-		gdterrors.ErrFailure,
+		api.ErrFailure,
 	)
 	// ErrExpectedNotFound is returned when we expected to get either a
 	// NotFound response code (get) or an empty set of results (list) but did
 	// not find that.
 	ErrExpectedNotFound = fmt.Errorf(
 		"%w: expected not found",
-		gdterrors.ErrFailure,
+		api.ErrFailure,
 	)
 	// ErrMatchesNotEqual is returned when we failed to match a resource to an
 	// object field in a `kube.assert.matches` object.
 	ErrMatchesNotEqual = fmt.Errorf(
 		"%w: match field not equal",
-		gdterrors.ErrFailure,
+		api.ErrFailure,
 	)
 	// ErrConditionDoesNotMatch is returned when we failed to match a resource to an
 	// Condition match expression in a `kube.assert.matches` object.
 	ErrConditionDoesNotMatch = fmt.Errorf(
 		"%w: condition does not match expectation",
-		gdterrors.ErrFailure,
+		api.ErrFailure,
 	)
 	// ErrConnect is returned when we failed to create a client config to
 	// connect to the Kubernetes API server.
 	ErrConnect = fmt.Errorf(
 		"%w: k8s connect failure",
-		gdterrors.RuntimeError,
+		api.RuntimeError,
 	)
 )
 

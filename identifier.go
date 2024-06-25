@@ -8,10 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gdt-dev/gdt/api"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/labels"
-
-	gdterrors "github.com/gdt-dev/gdt/errors"
 )
 
 // resourceIdentifierWithSelector is the full long-form resource identifier as
@@ -56,7 +55,7 @@ func (r *ResourceIdentifier) Labels() map[string]string {
 // ResourceIdentifier can be either a string or a selector.
 func (r *ResourceIdentifier) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.ScalarNode && node.Kind != yaml.MappingNode {
-		return gdterrors.ExpectedScalarOrMapAt(node)
+		return api.ExpectedScalarOrMapAt(node)
 	}
 	var s string
 	// A resource identifier can be a string of the form {type}/{name} or
@@ -140,7 +139,7 @@ func (r *ResourceIdentifierOrFile) Labels() map[string]string {
 // ResourceIdentifierOrFile can be either a string or a selector.
 func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.ScalarNode && node.Kind != yaml.MappingNode {
-		return gdterrors.ExpectedScalarOrMapAt(node)
+		return api.ExpectedScalarOrMapAt(node)
 	}
 	var s string
 	// A resource identifier can be a filepath, a string of the form
@@ -148,7 +147,7 @@ func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&s); err == nil {
 		if probablyFilePath(s) {
 			if !fileExists(s) {
-				return gdterrors.FileNotFound(s, node)
+				return api.FileNotFound(s, node)
 			}
 			r.fp = s
 			return nil

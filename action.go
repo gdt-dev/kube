@@ -13,8 +13,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gdt-dev/gdt/api"
 	"github.com/gdt-dev/gdt/debug"
-	gdterrors "github.com/gdt-dev/gdt/errors"
 	"github.com/gdt-dev/gdt/parse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -226,7 +226,7 @@ func (a *Action) create(
 		if err != nil {
 			// This should never happen because we check during parse time
 			// whether the file can be opened.
-			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 			return rterr
 		}
 		defer f.Close()
@@ -245,7 +245,7 @@ func (a *Action) create(
 
 	objs, err := unstructuredFromReader(r)
 	if err != nil {
-		rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+		rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 		return rterr
 	}
 	for _, obj := range objs {
@@ -290,7 +290,7 @@ func (a *Action) apply(
 		if err != nil {
 			// This should never happen because we check during parse time
 			// whether the file can be opened.
-			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 			return rterr
 		}
 		defer f.Close()
@@ -309,7 +309,7 @@ func (a *Action) apply(
 
 	objs, err := unstructuredFromReader(r)
 	if err != nil {
-		rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+		rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 		return rterr
 	}
 	for _, obj := range objs {
@@ -358,13 +358,13 @@ func (a *Action) delete(
 		if err != nil {
 			// This should never happen because we check during parse time
 			// whether the file can be opened.
-			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 			return rterr
 		}
 		defer f.Close()
 		objs, err := unstructuredFromReader(f)
 		if err != nil {
-			rterr := fmt.Errorf("%w: %s", gdterrors.RuntimeError, err)
+			rterr := fmt.Errorf("%w: %s", api.RuntimeError, err)
 			return rterr
 		}
 		for _, obj := range objs {
@@ -378,7 +378,7 @@ func (a *Action) delete(
 			if ons == "" {
 				ons = ns
 			}
-			if err = a.doDelete(ctx, c, res, name, ns); err != nil {
+			if err = a.doDelete(ctx, c, res, name, ons); err != nil {
 				return err
 			}
 		}

@@ -6,21 +6,14 @@ package kube_test
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/gdt-dev/gdt"
-	"github.com/gdt-dev/gdt/errors"
-	gdttypes "github.com/gdt-dev/gdt/types"
+	"github.com/gdt-dev/gdt/api"
 	gdtkube "github.com/gdt-dev/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func currentDir() string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Dir(filename)
-}
 
 func TestFailureBadDefaults(t *testing.T) {
 	assert := assert.New(t)
@@ -30,7 +23,7 @@ func TestFailureBadDefaults(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, errors.ErrExpectedMap)
+	assert.ErrorIs(err, api.ErrExpectedMap)
 	require.Nil(s)
 }
 
@@ -43,7 +36,7 @@ func TestFailureDefaultsConfigNotFound(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrKubeConfigNotFound)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -56,7 +49,7 @@ func TestFailureBothShortcutAndKubeSpec(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrEitherShortcutOrKubeSpec)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -69,7 +62,7 @@ func TestFailureMoreThanOneKubeAction(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrMoreThanOneKubeAction)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -82,7 +75,7 @@ func TestFailureInvalidResourceSpecifierNoMultipleResources(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalid)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -95,7 +88,7 @@ func TestFailureInvalidResourceSpecifierMutipleForwardSlashes(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalid)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -108,7 +101,7 @@ func TestFailureInvalidDeleteNotFilepathOrResourceSpecifier(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalidOrFilepath)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -120,8 +113,8 @@ func TestFailureCreateFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, errors.ErrFileNotFound)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrFileNotFound)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -133,8 +126,8 @@ func TestFailureDeleteFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, errors.ErrFileNotFound)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrFileNotFound)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -146,8 +139,8 @@ func TestFailureBadMatchesFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, errors.ErrFileNotFound)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrFileNotFound)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -160,7 +153,7 @@ func TestFailureBadMatchesInvalidYAML(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrMatchesInvalid)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -173,7 +166,7 @@ func TestFailureBadMatchesEmpty(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrExpectedMapOrYAMLString)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -186,7 +179,7 @@ func TestFailureBadMatchesNotMapAny(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrMatchesInvalid)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -198,8 +191,8 @@ func TestFailureBadPlacementNotObject(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, errors.ErrExpectedMap)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrExpectedMap)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -212,7 +205,7 @@ func TestWithLabelsInvalid(t *testing.T) {
 	s, err := gdt.From(fp)
 	require.NotNil(err)
 	assert.ErrorIs(err, gdtkube.ErrWithLabelsInvalid)
-	assert.ErrorIs(err, errors.ErrParse)
+	assert.ErrorIs(err, api.ErrParse)
 	require.Nil(s)
 }
 
@@ -242,12 +235,12 @@ spec:
 `
 	var zero int
 
-	expTests := []gdttypes.Evaluable{
+	expTests := []api.Evaluable{
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    0,
 				Name:     "create a pod from YAML using kube.create shortcut",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -256,10 +249,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    1,
 				Name:     "apply a pod from a file using kube.apply shortcut",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -268,10 +261,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    2,
 				Name:     "create a pod from YAML",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -280,10 +273,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    3,
 				Name:     "delete a pod from a file",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -295,10 +288,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    4,
 				Name:     "fetch a pod via kube.get shortcut",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -309,10 +302,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    5,
 				Name:     "fetch a pod via long-form kube:get",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -323,10 +316,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    6,
 				Name:     "fetch a pod via kube.get shortcut to long-form resource identifier with labels",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -339,10 +332,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    7,
 				Name:     "fetch a pod via kube:get long-form resource identifier with labels",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
@@ -355,10 +348,10 @@ spec:
 			},
 		},
 		&gdtkube.Spec{
-			Spec: gdttypes.Spec{
+			Spec: api.Spec{
 				Index:    8,
 				Name:     "fetch a pod with envvar substitution",
-				Defaults: &gdttypes.Defaults{},
+				Defaults: &api.Defaults{},
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{

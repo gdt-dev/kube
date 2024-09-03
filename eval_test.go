@@ -67,6 +67,23 @@ func TestCreateUnknownResource(t *testing.T) {
 	require.Nil(err)
 }
 
+func TestSameNamedKind(t *testing.T) {
+	testutil.SkipIfNoKind(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "same-named-kind.yaml")
+
+	s, err := gdt.From(fp)
+	require.Nil(err)
+	require.NotNil(s)
+
+	ctx := gdtcontext.New()
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
 func TestDeleteResourceNotFound(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)

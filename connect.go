@@ -97,9 +97,27 @@ type connection struct {
 	client dynamic.Interface
 }
 
-// mappingFor returns a RESTMapper for a given resource type or kind
-func (c *connection) mappingFor(typeOrKind string) (*meta.RESTMapping, error) {
-	fullySpecifiedGVR, groupResource := schema.ParseResourceArg(typeOrKind)
+// mappingForGVK returns a RESTMapper for a given GroupVersionKind
+func (c *connection) mappingForGVK(gvk schema.GroupVersionKind) (*meta.RESTMapping, error) {
+	mapping, err := c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		// if we error out here, it is because we could not match a resource or a kind
+		// for the given argument. To maintain consistency with previous behavior,
+		// announce that a resource type could not be found.
+		// if the error is _not_ a *meta.NoKindMatchError, then we had trouble doing discovery,
+		// so we should return the original error since it may help a user diagnose what is actually wrong
+		if meta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("the server doesn't have a resource type %q", gvk)
+		}
+		return nil, err
+	}
+
+	return mapping, nil
+}
+
+// mappingForArg returns a RESTMapper for a given GroupVersionKind
+func (c *connection) mappingForArg(arg string) (*meta.RESTMapping, error) {
+	fullySpecifiedGVR, groupResource := schema.ParseResourceArg(arg)
 	gvk := schema.GroupVersionKind{}
 
 	if fullySpecifiedGVR != nil {
@@ -112,7 +130,7 @@ func (c *connection) mappingFor(typeOrKind string) (*meta.RESTMapping, error) {
 		return c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	}
 
-	fullySpecifiedGVK, groupKind := schema.ParseKindArg(typeOrKind)
+	fullySpecifiedGVK, groupKind := schema.ParseKindArg(arg)
 	if fullySpecifiedGVK == nil {
 		gvk := groupKind.WithVersion("")
 		fullySpecifiedGVK = &gvk
@@ -140,18 +158,34 @@ func (c *connection) mappingFor(typeOrKind string) (*meta.RESTMapping, error) {
 	return mapping, nil
 }
 
+// gvrFromArg returns a GroupVersionResource from a resource or kind arg
+// string, using the discovery client to look up the resource name (the plural
+// of the kind). The returned GroupVersionResource will have the proper Group
+// and Version filled in (as opposed to an APIResource which has empty Group
+// and Version strings because it "inherits" its APIResourceList's GroupVersion
+// ... ugh.)
+func (c *connection) gvrFromArg(
+	arg string,
+) (schema.GroupVersionResource, error) {
+	empty := schema.GroupVersionResource{}
+	r, err := c.mappingForArg(arg)
+	if err != nil {
+		return empty, ResourceUnknown(arg)
+	}
+
+	return r.Resource, nil
+}
+
 // gvrFromGVK returns a GroupVersionResource from a GroupVersionKind, using the
 // discovery client to look up the resource name (the plural of the kind). The
 // returned GroupVersionResource will have the proper Group and Version filled
 // in (as opposed to an APIResource which has empty Group and Version strings
 // because it "inherits" its APIResourceList's GroupVersion ... ugh.)
-func (c *connection) gvrFromGVK(
-	gvk schema.GroupVersionKind,
-) (schema.GroupVersionResource, error) {
+func (c *connection) gvrFromGVK(gvk schema.GroupVersionKind) (schema.GroupVersionResource, error) {
 	empty := schema.GroupVersionResource{}
-	r, err := c.mappingFor(gvk.Kind)
+	r, err := c.mappingForGVK(gvk)
 	if err != nil {
-		return empty, ResourceUnknown(gvk)
+		return empty, ResourceUnknown(gvk.String())
 	}
 
 	return r.Resource, nil

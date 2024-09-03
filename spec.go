@@ -138,7 +138,7 @@ func probablyFilePath(subject string) bool {
 	if strings.ContainsAny(subject, " :\n\r\t") {
 		return false
 	}
-	return strings.ContainsRune(subject, '.')
+	return strings.HasSuffix(subject, ".yaml") || strings.HasSuffix(subject, ".yml")
 }
 
 func (s *Spec) SetBase(b api.Spec) {

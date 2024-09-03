@@ -1,0 +1,94 @@
+name: same-named-kind
+description: test multiple Kinds with different APIVersions
+fixtures:
+ - kind
+tests:
+ - kube:
+     create: |
+       apiVersion: apiextensions.k8s.io/v1
+       kind: CustomResourceDefinition
+       metadata:
+         name: foos.example.com
+       spec:
+         group: example.com
+         versions:
+          - name: v1
+            served: true
+            storage: true
+            schema:
+              openAPIV3Schema:
+                type: object
+                properties:
+                  spec:
+                    type: object
+                    properties:
+                      a:
+                        type: string
+                      b:
+                        type: integer
+         scope: Namespaced
+         names:
+           kind: Foo
+           plural: foos
+           singular: foo
+ - kube:
+     create: |
+       apiVersion: apiextensions.k8s.io/v1
+       kind: CustomResourceDefinition
+       metadata:
+         name: foos.anotherexample.com
+       spec:
+         group: anotherexample.com
+         versions:
+          - name: v1
+            served: true
+            storage: true
+            schema:
+              openAPIV3Schema:
+                type: object
+                properties:
+                  spec:
+                    type: object
+                    properties:
+                      a:
+                        type: string
+                      b:
+                        type: integer
+         scope: Namespaced
+         names:
+           kind: Foo
+           plural: foos
+           singular: foo
+ - kube.get: foos.example.com/nonexisting
+   assert:
+     notfound: true
+ - kube.get: foos.anotherexample.com/nonexisting
+   assert:
+     notfound: true
+ # Kube assumes the first Kind-matching resource type, so this should return a
+ # not found, not an unknown resource
+ - kube.get: foos/nonexisting
+   assert:
+     notfound: true
+ - kube:
+     create: |
+       apiVersion: anotherexample.com/v1
+       kind: Foo
+       metadata:
+         name: fooexample
+       spec:
+         a: example
+         b: 42
+ - kube.get: foos.anotherexample.com/fooexample
+   assert:
+     matches:
+       spec:
+         b: 42
+ - kube.get: foos.v1.anotherexample.com/fooexample
+   assert:
+     matches:
+       spec:
+         b: 42
+ - kube.delete: foos.anotherexample.com/fooexample
+ - kube.delete: crds/foos.example.com
+ - kube.delete: crds/foos.anotherexample.com

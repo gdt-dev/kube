@@ -9,7 +9,6 @@ import (
 
 	"github.com/gdt-dev/gdt/api"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -181,9 +180,10 @@ func InvalidWithLabels(err error, node *yaml.Node) error {
 	)
 }
 
-// ResourceUnknown returns ErrRuntimeResourceUnknown for a given kind
-func ResourceUnknown(gvk schema.GroupVersionKind) error {
-	return fmt.Errorf("%w: %s", ErrResourceUnknown, gvk)
+// ResourceUnknown returns ErrRuntimeResourceUnknown for a given resource or
+// kind arg string
+func ResourceUnknown(arg string) error {
+	return fmt.Errorf("%w: %s", ErrResourceUnknown, arg)
 }
 
 // ExpectedNotFound returns ErrExpectedNotFound for a given status code or

@@ -121,14 +121,11 @@ func (a *Action) get(
 	ns string,
 	out *interface{},
 ) error {
-	kind, name := a.Get.KindName()
-	gvk := schema.GroupVersionKind{
-		Kind: kind,
-	}
-	res, err := c.gvrFromGVK(gvk)
+	res, err := c.gvrFromArg(a.Get.Arg)
 	if err != nil {
 		return err
 	}
+	name := a.Get.Name
 	if name == "" {
 		list, err := a.doList(ctx, c, res, ns)
 		if err == nil {
@@ -154,7 +151,7 @@ func (a *Action) doList(
 	resName := res.Resource
 	labelSelString := ""
 	opts := metav1.ListOptions{}
-	withlabels := a.Get.Labels()
+	withlabels := a.Get.Labels
 	if withlabels != nil {
 		// We already validated the label selector during parse-time
 		labelsStr := labels.Set(withlabels).String()
@@ -250,21 +247,30 @@ func (a *Action) create(
 	}
 	for _, obj := range objs {
 		gvk := obj.GetObjectKind().GroupVersionKind()
-		ons := obj.GetNamespace()
-		if ons == "" {
-			ons = ns
-		}
 		res, err := c.gvrFromGVK(gvk)
 		if err != nil {
 			return err
 		}
 		resName := res.Resource
-		debug.Println(ctx, "kube.create: %s (ns: %s)", resName, ons)
-		obj, err := c.client.Resource(res).Namespace(ons).Create(
-			ctx,
-			obj,
-			metav1.CreateOptions{},
-		)
+		if c.resourceNamespaced(res) {
+			ons := obj.GetNamespace()
+			if ons == "" {
+				ons = ns
+			}
+			debug.Println(ctx, "kube.create: %s (ns: %s)", resName, ons)
+			obj, err = c.client.Resource(res).Namespace(ons).Create(
+				ctx,
+				obj,
+				metav1.CreateOptions{},
+			)
+		} else {
+			debug.Println(ctx, "kube.create: %s (non-namespaced resource)", resName)
+			obj, err = c.client.Resource(res).Create(
+				ctx,
+				obj,
+				metav1.CreateOptions{},
+			)
+		}
 		if err != nil {
 			return err
 		}
@@ -314,28 +320,44 @@ func (a *Action) apply(
 	}
 	for _, obj := range objs {
 		gvk := obj.GetObjectKind().GroupVersionKind()
-		ons := obj.GetNamespace()
-		if ons == "" {
-			ons = ns
-		}
 		res, err := c.gvrFromGVK(gvk)
 		if err != nil {
 			return err
 		}
 		resName := res.Resource
-		debug.Println(ctx, "kube.apply: %s (ns: %s)", resName, ons)
-		obj, err := c.client.Resource(res).Namespace(ns).Apply(
-			ctx,
-			// NOTE(jaypipes): Not sure why a separate name argument is
-			// necessary considering `obj` is of type
-			// `*unstructured.Unstructured` and therefore has the `GetName()`
-			// method...
-			obj.GetName(),
-			obj,
-			// TODO(jaypipes): Not sure if this hard-coded options struct is
-			// always going to work. Maybe add ability to control it?
-			metav1.ApplyOptions{FieldManager: fieldManagerName, Force: true},
-		)
+		if c.resourceNamespaced(res) {
+			ons := obj.GetNamespace()
+			if ons == "" {
+				ons = ns
+			}
+			debug.Println(ctx, "kube.apply: %s (ns: %s)", resName, ons)
+			obj, err = c.client.Resource(res).Namespace(ns).Apply(
+				ctx,
+				// NOTE(jaypipes): Not sure why a separate name argument is
+				// necessary considering `obj` is of type
+				// `*unstructured.Unstructured` and therefore has the `GetName()`
+				// method...
+				obj.GetName(),
+				obj,
+				// TODO(jaypipes): Not sure if this hard-coded options struct is
+				// always going to work. Maybe add ability to control it?
+				metav1.ApplyOptions{FieldManager: fieldManagerName, Force: true},
+			)
+		} else {
+			debug.Println(ctx, "kube.apply: %s (non-namespaced resource)", resName)
+			obj, err = c.client.Resource(res).Apply(
+				ctx,
+				// NOTE(jaypipes): Not sure why a separate name argument is
+				// necessary considering `obj` is of type
+				// `*unstructured.Unstructured` and therefore has the `GetName()`
+				// method...
+				obj.GetName(),
+				obj,
+				// TODO(jaypipes): Not sure if this hard-coded options struct is
+				// always going to work. Maybe add ability to control it?
+				metav1.ApplyOptions{FieldManager: fieldManagerName, Force: true},
+			)
+		}
 		if err != nil {
 			return err
 		}
@@ -385,14 +407,11 @@ func (a *Action) delete(
 		return nil
 	}
 
-	kind, name := a.Delete.KindName()
-	gvk := schema.GroupVersionKind{
-		Kind: kind,
-	}
-	res, err := c.gvrFromGVK(gvk)
+	res, err := c.gvrFromArg(a.Delete.Arg)
 	if err != nil {
 		return err
 	}
+	name := a.Delete.Name
 	if name == "" {
 		return a.doDeleteCollection(ctx, c, res, ns)
 	}
@@ -408,11 +427,22 @@ func (a *Action) doDelete(
 	name string,
 ) error {
 	resName := res.Resource
+	if c.resourceNamespaced(res) {
+		debug.Println(
+			ctx, "kube.delete: %s/%s (ns: %s)",
+			resName, name, ns,
+		)
+		return c.client.Resource(res).Namespace(ns).Delete(
+			ctx,
+			name,
+			metav1.DeleteOptions{},
+		)
+	}
 	debug.Println(
-		ctx, "kube.delete: %s/%s (ns: %s)",
-		resName, name, ns,
+		ctx, "kube.delete: %s/%s (non-namespaced resource)",
+		resName, name,
 	)
-	return c.client.Resource(res).Namespace(ns).Delete(
+	return c.client.Resource(res).Delete(
 		ctx,
 		name,
 		metav1.DeleteOptions{},
@@ -428,7 +458,7 @@ func (a *Action) doDeleteCollection(
 	ns string,
 ) error {
 	opts := metav1.ListOptions{}
-	withlabels := a.Delete.Labels()
+	withlabels := a.Delete.Labels
 	labelSelString := ""
 	if withlabels != nil {
 		// We already validated the label selector during parse-time
@@ -437,11 +467,22 @@ func (a *Action) doDeleteCollection(
 		opts.LabelSelector = labelsStr
 	}
 	resName := res.Resource
+	if c.resourceNamespaced(res) {
+		debug.Println(
+			ctx, "kube.delete: %s%s (ns: %s)",
+			resName, labelSelString, ns,
+		)
+		return c.client.Resource(res).Namespace(ns).DeleteCollection(
+			ctx,
+			metav1.DeleteOptions{},
+			opts,
+		)
+	}
 	debug.Println(
-		ctx, "kube.delete: %s%s (ns: %s)",
-		resName, labelSelString, ns,
+		ctx, "kube.delete: %s%s (non-namespaced resource)",
+		resName, labelSelString,
 	)
-	return c.client.Resource(res).Namespace(ns).DeleteCollection(
+	return c.client.Resource(res).DeleteCollection(
 		ctx,
 		metav1.DeleteOptions{},
 		opts,

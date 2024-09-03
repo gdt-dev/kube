@@ -19,6 +19,8 @@ type resourceIdentifierWithSelector struct {
 	// Type is the resource type to select. This should *not* be a type/name
 	// combination.
 	Type string `yaml:"type"`
+	// Name is the optional name of the resource to get
+	Name string `yaml:"name,omitempty"`
 	// Labels is a map, keyed by metadata Label, of Label values to select a
 	// resource by
 	Labels map[string]string `yaml:"labels,omitempty"`
@@ -28,27 +30,17 @@ type resourceIdentifierWithSelector struct {
 // either a string or a struct containing a selector with things like a label
 // key/value map.
 type ResourceIdentifier struct {
-	kind   string            `yaml:"-"`
-	name   string            `yaml:"-"`
-	labels map[string]string `yaml:"-"`
+	Arg    string            `yaml:"-"`
+	Name   string            `yaml:"-"`
+	Labels map[string]string `yaml:"-"`
 }
 
 // Title returns the resource identifier's kind and name, if present
 func (r *ResourceIdentifier) Title() string {
-	if r.name == "" {
-		return r.kind
+	if r.Name == "" {
+		return r.Arg
 	}
-	return r.kind + "/" + r.name
-}
-
-// KindName returns the resource identifier's kind and name
-func (r *ResourceIdentifier) KindName() (string, string) {
-	return r.kind, r.name
-}
-
-// Labels returns the resource identifier's labels map, if present
-func (r *ResourceIdentifier) Labels() map[string]string {
-	return r.labels
+	return r.Arg + "/" + r.Name
 }
 
 // UnmarshalYAML is a custom unmarshaler that understands that the value of the
@@ -67,7 +59,7 @@ func (r *ResourceIdentifier) UnmarshalYAML(node *yaml.Node) error {
 		if strings.Count(s, "/") > 1 {
 			return InvalidResourceSpecifier(s, node)
 		}
-		r.kind, r.name = splitKindName(s)
+		r.Arg, r.Name = splitArgName(s)
 		return nil
 	}
 	// Otherwise the resource identifier should be specified broken out as a
@@ -80,21 +72,21 @@ func (r *ResourceIdentifier) UnmarshalYAML(node *yaml.Node) error {
 	if err != nil {
 		return InvalidWithLabels(err, node)
 	}
-	r.kind = ri.Type
-	r.name = ""
-	r.labels = ri.Labels
+	r.Arg = ri.Type
+	r.Name = ri.Name
+	r.Labels = ri.Labels
 	return nil
 }
 
 func NewResourceIdentifier(
-	kind string,
+	arg string,
 	name string,
 	labels map[string]string,
 ) *ResourceIdentifier {
 	return &ResourceIdentifier{
-		kind:   kind,
-		name:   name,
-		labels: labels,
+		Arg:    arg,
+		Name:   name,
+		Labels: labels,
 	}
 }
 
@@ -103,9 +95,9 @@ func NewResourceIdentifier(
 // like a label key/value map.
 type ResourceIdentifierOrFile struct {
 	fp     string            `yaml:"-"`
-	kind   string            `yaml:"-"`
-	name   string            `yaml:"-"`
-	labels map[string]string `yaml:"-"`
+	Arg    string            `yaml:"-"`
+	Name   string            `yaml:"-"`
+	Labels map[string]string `yaml:"-"`
 }
 
 // FilePath returns the resource identifier's file path, if present
@@ -119,20 +111,10 @@ func (r *ResourceIdentifierOrFile) Title() string {
 	if r.fp != "" {
 		return filepath.Base(r.fp)
 	}
-	if r.name == "" {
-		return r.kind
+	if r.Name == "" {
+		return r.Arg
 	}
-	return r.kind + "/" + r.name
-}
-
-// KindName returns the resource identifier's kind and name
-func (r *ResourceIdentifierOrFile) KindName() (string, string) {
-	return r.kind, r.name
-}
-
-// Labels returns the resource identifier's labels map, if present
-func (r *ResourceIdentifierOrFile) Labels() map[string]string {
-	return r.labels
+	return r.Arg + "/" + r.Name
 }
 
 // UnmarshalYAML is a custom unmarshaler that understands that the value of the
@@ -158,7 +140,7 @@ func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
 		if strings.Count(s, "/") > 1 {
 			return InvalidResourceSpecifierOrFilepath(s, node)
 		}
-		r.kind, r.name = splitKindName(s)
+		r.Arg, r.Name = splitArgName(s)
 		return nil
 	}
 	// Otherwise the resource identifier should be specified broken out as a
@@ -171,30 +153,43 @@ func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
 	if err != nil {
 		return InvalidWithLabels(err, node)
 	}
-	r.kind = ri.Type
-	r.name = ""
-	r.labels = ri.Labels
+	r.Arg = ri.Type
+	r.Name = ri.Name
+	r.Labels = ri.Labels
 	return nil
 }
 
 func NewResourceIdentifierOrFile(
 	fp string,
-	kind string,
+	arg string,
 	name string,
 	labels map[string]string,
 ) *ResourceIdentifierOrFile {
 	return &ResourceIdentifierOrFile{
 		fp:     fp,
-		kind:   kind,
-		name:   name,
-		labels: labels,
+		Arg:    arg,
+		Name:   name,
+		Labels: labels,
 	}
 }
 
-// splitKindName returns the Kind for a supplied `Get` or `Delete` command
-// where the user can specify either a resource kind or alias, e.g. "pods" or
-// "po", or the resource kind followed by a forward slash and a resource name.
-func splitKindName(subject string) (string, string) {
-	kind, name, _ := strings.Cut(subject, "/")
-	return kind, name
+// splitArgName returns the resource or kind arg string for a supplied `Get` or
+// `Delete` command where the user can specify either a resource kind or alias,
+// e.g. "pods" or "po", or the resource kind followed by a forward slash and a
+// resource name.
+//
+// Valid resource/kind arg plus name strings:
+//
+// * "pods"
+// * "pod"
+// * "pods/name"
+// * "pod/name"
+// * "deployments.apps/name"
+// * "deployments.v1.apps/name"
+// * "Deployment/name"
+// * "Deployment.apps/name"
+// * "Deployment.v1.apps/name"
+func splitArgName(subject string) (string, string) {
+	arg, name, _ := strings.Cut(subject, "/")
+	return arg, name
 }

@@ -5,7 +5,7 @@ CLUSTERS = $(shell kind get clusters)
 
 kind-install:
 ifeq (, $(shell command -v kind))
-	go install sigs.k8s.io/kind@v0.23.0
+	go install sigs.k8s.io/kind@v0.30.0
 endif
 
 # We clear the test cache because some of the tests require an out-of-band KinD
@@ -35,7 +35,7 @@ endif
 
 test: clear-test-cache kind-clear-clusters kind-create-cluster test-kind-simple
 
-test-kind-simple:
+test-kind-simple: clear-test-cache kind-clear-clusters
 	@go test -v ./parse_test.go
 	@go test -v ./eval_test.go
 

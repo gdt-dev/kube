@@ -1,0 +1,7 @@
+name: bad-var-type
+description: invalid var (expected map not string)
+tests:
+ - kube:
+     get: pods/name
+   var:
+     POD: $.metadata.name

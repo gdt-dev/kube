@@ -2,6 +2,9 @@ name: conditions
 description: create a deployment and check the Ready condition eventually equals True
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: conditions
 tests:
   - name: create-deployment
     kube:

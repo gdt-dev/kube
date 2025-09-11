@@ -2,6 +2,9 @@ name: list-pods-empty
 description: test empty list of Pod resources
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: list-pods-empty
 tests:
   - name: verify-no-pods
     kube:

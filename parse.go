@@ -17,6 +17,7 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
 		return api.ExpectedMapAt(node)
 	}
+	vars := Variables{}
 	// We do an initial pass over the shortcut fields, then all the
 	// non-shortcut fields after that.
 	var ks *KubeSpec
@@ -108,6 +109,15 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 				return err
 			}
 			s.Kube = ks
+		case "var":
+			if valNode.Kind != yaml.MappingNode {
+				return api.ExpectedMapAt(valNode)
+			}
+			var specVars Variables
+			if err := valNode.Decode(&specVars); err != nil {
+				return err
+			}
+			vars = lo.Assign(specVars, vars)
 		case "assert":
 			if valNode.Kind != yaml.MappingNode {
 				return api.ExpectedMapAt(valNode)
@@ -125,6 +135,9 @@ func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
 			}
 			return api.UnknownFieldAt(key, keyNode)
 		}
+	}
+	if len(vars) > 0 {
+		s.Var = vars
 	}
 	return nil
 }

@@ -1,0 +1,59 @@
+name: curl-pod-ip
+description: scenario showing how to create two NGinx Pods and test connectivity to internal Pod IP addresses
+fixtures:
+  - kind
+defaults:
+  kube:
+    namespace: curl-pod-ip
+tests:
+  - name: create-server
+    kube:
+      create: testdata/manifests/nginx-server.yaml
+
+  - name: get-server-pod-ip
+    kube:
+      get: pods/server
+    assert:
+      conditions:
+        ready:
+          status: true
+    var:
+      SERVER_IP:
+        from: $.status.podIP
+
+  - name: create-connect-tester
+    kube:
+      create: testdata/manifests/nginx-connect-test.yaml
+
+  - name: wait-connect-test-ready
+    kube:
+      get: pods/connect-test
+    assert:
+      conditions:
+        ready:
+          status: true
+
+  - name: curl-server-from-connect-tester
+    exec: kubectl exec -n curl-pod-ip pods/connect-test -- curl -s -I -v $$SERVER_IP
+    timeout: 2s
+    assert:
+      out:
+        contains: "200 OK"
+      # curl -v causes output to be sent to stderr that looks like this:
+      # * Connected to 10.244.0.17 (10.244.0.17) port 80 (#0)
+      # > GET / HTTP/1.1
+      # > Host: 10.244.0.17
+      # > User-Agent: curl/7.88.1
+      # > Accept: */*
+      # >
+      # < HTTP/1.1 200 OK
+      err:
+        contains: "Host: $$SERVER_IP"
+
+  - name: delete-connect-tester
+    kube:
+      delete: pods/connect-test
+
+  - name: delete-server
+    kube:
+      delete: pods/server

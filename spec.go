@@ -80,6 +80,10 @@ type Spec struct {
 	// TODO(jaypipes): Make this polymorphic to be either a single assertion
 	// struct or a list of assertion structs
 	Assert *Expect `yaml:"assert,omitempty"`
+	// Var allows the test author to save arbitrary data to the test scenario,
+	// facilitating the passing of variables between test specs potentially
+	// provided by different gdt Plugins.
+	Var Variables `yaml:"var,omitempty"`
 }
 
 func (s *Spec) Retry() *api.Retry {

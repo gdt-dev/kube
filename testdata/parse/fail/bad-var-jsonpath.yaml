@@ -1,0 +1,10 @@
+name: bad-var-jsonpath
+description: invalid var JSONPath expression
+tests:
+ - name: define a gdt variable
+   kube:
+     get: pods/name
+   var:
+     POD:
+       # missing . selector after leading $
+       from: $metadata.name

@@ -5,6 +5,8 @@
 package kube_test
 
 import (
+	"bufio"
+	"bytes"
 	"path/filepath"
 	"testing"
 
@@ -14,6 +16,10 @@ import (
 
 	kindfix "github.com/gdt-dev/kube/fixtures/kind"
 	"github.com/gdt-dev/kube/testutil"
+)
+
+var stdKindFix = kindfix.New(
+	kindfix.WithRetainOnStop(),
 )
 
 func TestListPodsEmpty(t *testing.T) {
@@ -27,7 +33,7 @@ func TestListPodsEmpty(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err, "%s", err)
@@ -44,7 +50,7 @@ func TestGetPodNotFound(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -61,7 +67,7 @@ func TestCreateUnknownResource(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -78,7 +84,7 @@ func TestSameNamedKind(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -95,7 +101,7 @@ func TestDeleteResourceNotFound(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -112,7 +118,7 @@ func TestDeleteUnknownResource(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -129,7 +135,7 @@ func TestPodCreateGetDelete(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -146,7 +152,7 @@ func TestMatches(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -163,7 +169,7 @@ func TestConditions(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -180,7 +186,7 @@ func TestJSON(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -197,7 +203,7 @@ func TestApply(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -216,7 +222,7 @@ func TestEnvvarSubstitution(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)
@@ -233,7 +239,45 @@ func TestWithLabels(t *testing.T) {
 	require.NotNil(s)
 
 	ctx := gdtcontext.New()
-	ctx = gdtcontext.RegisterFixture(ctx, "kind", kindfix.New())
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
+
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
+func TestVarSaveRestore(t *testing.T) {
+	testutil.SkipIfNoKind(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "var-save-restore.yaml")
+
+	s, err := gdt.From(fp)
+	require.Nil(err)
+	require.NotNil(s)
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
+
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
+func TestCurlPodIP(t *testing.T) {
+	testutil.SkipIfNoKind(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "curl-pod-ip.yaml")
+
+	s, err := gdt.From(fp)
+	require.Nil(err)
+	require.NotNil(s)
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
 
 	err = s.Run(ctx, t)
 	require.Nil(err)

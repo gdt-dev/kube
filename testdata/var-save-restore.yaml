@@ -1,0 +1,35 @@
+name: var-save-restore
+description: scenario showing different variations of variable definition and references
+fixtures:
+  - kind
+defaults:
+  kube:
+    namespace: var-save-restore
+tests:
+  - name: create-pod
+    kube:
+      create: testdata/manifests/nginx-pod.yaml
+
+  - name: define a variable and populate it with the pod's IP address
+    kube:
+      get: pods/nginx
+    assert:
+      conditions:
+        ready:
+          status: true
+    var:
+      POD_IP:
+        from: $.status.podIP
+      POD_NAME:
+        from: $.metadata.name
+
+  - name: get the pod's information and assert same values as variables
+    kube.get: pods/$$POD_NAME
+    assert:
+      matches:
+        status:
+          podIP: $$POD_IP
+
+  - name: delete-pod
+    kube:
+      delete: pods/$$POD_NAME

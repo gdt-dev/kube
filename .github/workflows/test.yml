@@ -13,7 +13,7 @@ jobs:
   test-skip-kind:
     strategy:
       matrix:
-        go: ['1.21']
+        go: ['1.23']
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -26,16 +26,17 @@ jobs:
            github.com:443
            api.github.com:443
            proxy.github.com:443
-           proxy.golang.org:443
            raw.githubusercontent.com:443
            objects.githubusercontent.com:443
            proxy.golang.org:443
+           blob.core.windows.net:443
      - name: checkout code
        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
      - name: setup go
        uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
        with:
          go-version: ${{ matrix.go }}
+         check-latest: true
      - name: run non-Kind tests
        env:
          SKIP_KIND: 1
@@ -43,33 +44,32 @@ jobs:
   test-all:
     strategy:
       matrix:
-        go: ['1.19', '1.20', '1.21']
+        go: ['1.21', '1.22', '1.23']
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
      - name: harden runner
        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
        with:
-         egress-policy: audit
+         egress-policy: block
          disable-sudo: true
          allowed-endpoints: >
            github.com:443
            api.github.com:443
            proxy.github.com:443
-           proxy.golang.org:443
            raw.githubusercontent.com:443
            objects.githubusercontent.com:443
            proxy.golang.org:443
-           storage.googleapis.com:443
-           *.docker.io:443
+           blob.core.windows.net:443
      - name: checkout code
        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
      - name: setup go
        uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
        with:
          go-version: ${{ matrix.go }}
+         check-latest: true
      - name: create KinD cluster
-       uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
+       uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
        with:
          cluster_name: kind
      - name: run all tests

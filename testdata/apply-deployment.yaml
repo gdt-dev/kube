@@ -2,6 +2,9 @@ name: apply-deployment
 description: create, get, apply a change, get, delete a Deployment
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: apply-deployment
 tests:
   - name: create-deployment
     kube:

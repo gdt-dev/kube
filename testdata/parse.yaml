@@ -48,3 +48,12 @@ tests:
      get: pods/${pod_name}
    assert:
      len: 0
+ - name: define a gdt variable
+   kube:
+     get: pods/name
+   var:
+     POD:
+       from: $.metadata.name
+ - name: fetch a pod with gdt variable system substitution
+   kube:
+     get: pods/$$POD

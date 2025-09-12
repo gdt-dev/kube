@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/gdt-dev/gdt/api"
+	gdtcontext "github.com/gdt-dev/gdt/context"
 	"github.com/gdt-dev/gdt/debug"
 	"github.com/gdt-dev/gdt/parse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,7 +122,16 @@ func (a *Action) get(
 	ns string,
 	out *interface{},
 ) error {
-	res, err := c.gvrFromArg(a.Get.Arg)
+	arg := a.Get.Arg
+	argRep := gdtcontext.ReplaceVariables(ctx, arg)
+	if arg != argRep {
+		debug.Println(
+			ctx,
+			"kube.get: replaced arg: %s -> %s",
+			arg, argRep,
+		)
+	}
+	res, err := c.gvrFromArg(argRep)
 	if err != nil {
 		return err
 	}
@@ -133,7 +143,15 @@ func (a *Action) get(
 		}
 		return err
 	} else {
-		obj, err := a.doGet(ctx, c, res, ns, name)
+		nameRep := gdtcontext.ReplaceVariables(ctx, name)
+		if name != nameRep {
+			debug.Println(
+				ctx,
+				"kube.get: replaced name: %s -> %s",
+				name, nameRep,
+			)
+		}
+		obj, err := a.doGet(ctx, c, res, ns, nameRep)
 		if err == nil {
 			*out = obj
 		}
@@ -426,25 +444,33 @@ func (a *Action) doDelete(
 	ns string,
 	name string,
 ) error {
+	nameRep := gdtcontext.ReplaceVariables(ctx, name)
+	if name != nameRep {
+		debug.Println(
+			ctx,
+			"kube.delete: replaced name: %s -> %s",
+			name, nameRep,
+		)
+	}
 	resName := res.Resource
 	if c.resourceNamespaced(res) {
 		debug.Println(
 			ctx, "kube.delete: %s/%s (ns: %s)",
-			resName, name, ns,
+			resName, nameRep, ns,
 		)
 		return c.client.Resource(res).Namespace(ns).Delete(
 			ctx,
-			name,
+			nameRep,
 			metav1.DeleteOptions{},
 		)
 	}
 	debug.Println(
 		ctx, "kube.delete: %s/%s (non-namespaced resource)",
-		resName, name,
+		resName, nameRep,
 	)
 	return c.client.Resource(res).Delete(
 		ctx,
-		name,
+		nameRep,
 		metav1.DeleteOptions{},
 	)
 }

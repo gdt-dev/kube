@@ -10,6 +10,8 @@ import (
 
 	"github.com/gdt-dev/gdt"
 	"github.com/gdt-dev/gdt/api"
+	gdtjson "github.com/gdt-dev/gdt/assertion/json"
+	"github.com/gdt-dev/gdt/suite"
 	gdtkube "github.com/gdt-dev/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -209,6 +211,42 @@ func TestWithLabelsInvalid(t *testing.T) {
 	require.Nil(s)
 }
 
+func TestFailureBadVarType(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "bad-var-type.yaml")
+
+	s, err := gdt.From(fp)
+	require.NotNil(err)
+	assert.ErrorIs(err, api.ErrExpectedMap)
+	require.Nil(s)
+}
+
+func TestFailureBadVarJSONPathNoRoot(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "bad-var-jsonpath-noroot.yaml")
+
+	s, err := gdt.From(fp)
+	require.NotNil(err)
+	assert.ErrorIs(err, gdtjson.ErrJSONPathInvalidNoRoot)
+	require.Nil(s)
+}
+
+func TestFailureBadVarJSONPath(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse", "fail", "bad-var-jsonpath.yaml")
+
+	s, err := gdt.From(fp)
+	require.NotNil(err)
+	assert.ErrorIs(err, gdtjson.ErrJSONPathInvalid)
+	require.Nil(s)
+}
+
 func TestParse(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -217,12 +255,9 @@ func TestParse(t *testing.T) {
 
 	fp := filepath.Join("testdata", "parse.yaml")
 
-	suite, err := gdt.From(fp)
+	s, err := gdt.From(fp)
 	require.Nil(err)
-	require.NotNil(suite)
-
-	require.Len(suite.Scenarios, 1)
-	s := suite.Scenarios[0]
+	require.NotNil(s)
 
 	podYAML := `apiVersion: v1
 kind: Pod
@@ -364,6 +399,51 @@ spec:
 				Len: &zero,
 			},
 		},
+		&gdtkube.Spec{
+			Spec: api.Spec{
+				Index:    9,
+				Name:     "define a gdt variable",
+				Defaults: &api.Defaults{},
+			},
+			Kube: &gdtkube.KubeSpec{
+				Action: gdtkube.Action{
+					Get: gdtkube.NewResourceIdentifier(
+						"pods", "name", nil,
+					),
+				},
+			},
+			Var: gdtkube.Variables{
+				"POD": gdtkube.VarEntry{
+					From: "$.metadata.name",
+				},
+			},
+		},
+		&gdtkube.Spec{
+			Spec: api.Spec{
+				Index:    10,
+				Name:     "fetch a pod with gdt variable system substitution",
+				Defaults: &api.Defaults{},
+			},
+			Kube: &gdtkube.KubeSpec{
+				Action: gdtkube.Action{
+					Get: gdtkube.NewResourceIdentifier(
+						"pods",
+						"$POD", // $$POD is replaced with $POD after envvar substitution...
+						nil,
+					),
+				},
+			},
+		},
 	}
-	assert.Equal(expTests, s.Tests)
+	su := s.(*suite.Suite)
+	require.Len(su.Scenarios, 1)
+	sc := su.Scenarios[0]
+	require.Len(sc.Tests, len(expTests))
+	for x, st := range sc.Tests {
+		exp := expTests[x].(*gdtkube.Spec)
+		stk := st.(*gdtkube.Spec)
+		assert.Equal(exp.Kube, stk.Kube)
+		assert.Equal(exp.Var, stk.Var)
+		assert.Equal(exp.Assert, stk.Assert)
+	}
 }

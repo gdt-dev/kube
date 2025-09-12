@@ -1,0 +1,10 @@
+name: bad-var-jsonpath-noroot
+description: var JSONPath expression has no $ root
+tests:
+ - name: define a gdt variable
+   kube:
+     get: pods/name
+   var:
+     POD:
+       # missing $ leading char
+       from: metadata.name

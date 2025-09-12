@@ -2,6 +2,9 @@ name: create-get-delete-pod
 description: create, get and delete a Pod
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: create-get-delete-pod
 tests:
   - name: create-pod
     kube:

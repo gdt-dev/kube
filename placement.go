@@ -183,7 +183,7 @@ func (a *assertions) placementSpreadOK(
 					"found uneven spread skew of %d for domain %s",
 					skew, domain,
 				)
-				a.Fail(fmt.Errorf(msg))
+				a.Fail(fmt.Errorf("%s", msg))
 				return false
 			}
 		}

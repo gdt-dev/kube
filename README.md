@@ -161,6 +161,12 @@ matches some expectation:
 * `kube.delete`: (optional) string or object containing either a resource
   identifier (e.g.  `pods`, `po/nginx` , a file path to a YAML manifest, or a
   label selector for resources that will be deleted.
+* `var`: (optional) an object describing variables that can have
+  values saved and referred to by subsequent test specs. Each key in the `var`
+  object is the name of the variable to define.
+* `var.$VARIABLE_NAME.from`: (required) a JSONPath expression describing where
+  the variable with name `$VARIABLE_NAME` should source its value from the
+  Kubernetes resource returned in a `kubectl get` response.
 * `assert`: (optional) object containing assertions to make about the
   action performed by the test.
 * `assert.error`: (optional) string to match a returned error from the
@@ -337,6 +343,151 @@ tests:
   - kube.delete: pods/nginx
 ```
 
+### Passing variables to subsequent test specs
+
+A `gdt` test scenario is comprised of a list of test specs. These test specs
+are executed in sequential order. If you want to have one test spec be able to
+use some output or value calculated or asserted in a previous step, you can use
+the `gdt` variable system.
+
+Here's an test scenario that shows how to define variables in a test spec and
+how to use those variables in later test specs.
+
+file: `testdata/var-save-restore.yaml`:
+
+```yaml
+name: var-save-restore
+description: scenario showing different variations of variable definition and references
+defaults:
+  kube:
+    namespace: var-save-restore
+tests:
+  - name: create-pod
+    kube:
+      create: testdata/manifests/nginx-pod.yaml
+
+  - name: define a variable and populate it with the pod's IP address
+    kube:
+      get: pods/nginx
+    assert:
+      conditions:
+        ready:
+          status: true
+    var:
+      POD_IP:
+        from: $.status.podIP
+      POD_NAME:
+        from: $.metadata.name
+
+  - name: get the pod's information and assert same values as variables
+    kube.get: pods/$$POD_NAME
+    assert:
+      matches:
+        status:
+          podIP: $$POD_IP
+
+  - name: delete-pod
+    kube:
+      delete: pods/$$POD_NAME
+```
+
+In the first test spec, we create new Pod by specifying the filepath to a
+Kubernetes manifest (`testdata/manifests/nginx-pod.yaml`):
+
+```yaml
+  - name: create-pod
+    kube:
+      create: testdata/manifests/nginx-pod.yaml
+```
+
+In the second test spec, we get the Pod that we created in the first step,
+asserting that the Pod is in a Ready state:
+
+```yaml
+  - name: define a variable and populate it with the pod's IP address
+    kube:
+      get: pods/nginx
+    assert:
+      conditions:
+        ready:
+          status: true
+```
+
+The `assert.conditions.ready.status=true` means that the above test spec will
+not succeed until the Pod is in a Ready state.
+
+> **NOTE**: Pods that are in a Ready state have their `status.podIP` field set
+> to a non-empty value.
+
+In the same second test spec, we add a `var:` section to define two variables
+that we can refer to in subsequent test specs:
+
+```yaml
+    var:
+      POD_IP:
+        from: $.status.podIP
+      POD_NAME:
+        from: $.metadata.name
+```
+
+The above creates two variables. The first variable is named `POD_IP` and will
+get its value from the field in the returned Pod resource representation at the
+JSONPath `$.status.podIP`. The second variable is named `POD_NAME` and gets its
+value from the field in the Pod resource representation at the JSONPath
+`$.metadata.name`.
+
+> **NOTE**: People familiar with using `kubectl get ... -o jsonpath=EXPRESSION`
+> should find this syntax easy to understand. Just remember that in gdt (and
+> proper JSONPath expressions), you must begin the JSONPath expression with the
+> `$.` characters instead of the `kubectl` behaviour of beginning the JSONPath
+> expression with the `{.` characters.
+>
+> If you do something like this to get a Pod's IP using `kubectl`:
+>
+> `kubectl get pod/my-pod -o jsonpath='{.status.podIP}'`
+>
+> You would do the following in a `gdt-kube` test spec:
+>
+> `from: $.status.podIP`
+
+Having defined the `POD_IP` and `POD_NAME` variables, you can then refer to the
+values contained in those variables in subsequent `gdt` test specs by using the
+double-dollar-sign notation.
+
+> **NOTE**: We use the double-dollar-sign notation because by default, `gdt`
+> replaces all single-dollar-sign notations with environment variables *BEFORE*
+> executing the test specs in a test scenario. Using the double-dollar-sign
+> notation means that environment variable substitution does not impact the
+> referencing of `gdt` variables referenced in a test spec.
+
+In the third test spec, you see any example of referring to the `POD_NAME`
+variable in the `kube.get` field:
+
+```yaml
+  - name: get the pod's information and assert same values as variables
+    kube.get: pods/$$POD_NAME
+```
+
+as well as an example of referring to the `POD_IP` variable in the `assert`
+field of that same test spec:
+
+```yaml
+    assert:
+      matches:
+        status:
+          podIP: $$POD_IP
+```
+
+Finally, the fourth test spec demonstrates that you can continue to refer to a
+variable defined in any previous test spec. In the fourth test spec, we refer
+to the `POD_NAME` variable from the `kube.delete` field:
+
+```yaml
+  - name: delete-pod
+    kube:
+      delete: pods/$$POD_NAME
+```
+
 ### Executing arbitrary commands or shell scripts
 
 You can mix other `gdt` test types in a single `gdt` test scenario. For
@@ -354,6 +505,92 @@ tests:
     wait:
       after: 30s
   - exec: ssh -T someuser@ip
+```
+
+Note that you can make use of the `gdt` variable system to pass values between
+`gdt` test specs, as this example demonstrates:
+
+file: `testdata/curl-pod-ip.yaml`
+
+```
+name: curl-pod-ip
+description: scenario showing how to create two NGinx Pods and test connectivity to internal Pod IP addresses
+fixtures:
+  - kind
+defaults:
+  kube:
+    namespace: curl-pod-ip
+tests:
+  - name: create-server
+    kube:
+      create: testdata/manifests/nginx-server.yaml
+
+  - name: get-server-pod-ip
+    kube:
+      get: pods/server
+    assert:
+      conditions:
+        ready:
+          status: true
+    var:
+      SERVER_IP:
+        from: $.status.podIP
+
+  - name: create-connect-tester
+    kube:
+      create: testdata/manifests/nginx-connect-test.yaml
+
+  - name: wait-connect-test-ready
+    kube:
+      get: pods/connect-test
+    assert:
+      conditions:
+        ready:
+          status: true
+
+  - name: curl-server-from-connect-tester
+    exec: kubectl exec -n curl-pod-ip pods/connect-test -- curl -s -I -v $$SERVER_IP
+    timeout: 2s
+    assert:
+      out:
+        contains: "200 OK"
+      # curl -v causes output to be sent to stderr that looks like this:
+      # * Connected to 10.244.0.17 (10.244.0.17) port 80 (#0)
+      # > GET / HTTP/1.1
+      # > Host: 10.244.0.17
+      # > User-Agent: curl/7.88.1
+      # > Accept: */*
+      # >
+      # < HTTP/1.1 200 OK
+      err:
+        contains: "Host: $$SERVER_IP"
+
+  - name: delete-connect-tester
+    kube:
+      delete: pods/connect-test
+
+  - name: delete-server
+    kube:
+      delete: pods/server
+```
+
+In the above example, we use a few `gdt-kube` test specs (the ones with `kube:`
+field in the test spec definition) along with an `exec` test spec that executes
+`curl` from a test Pod that a previous test spec creates and the command that
+the test spec executes references the `SERVER_IP` variable defined in the
+second step:
+
+```yaml
+  - name: curl-server-from-connect-tester
+    exec: kubectl exec -n curl-pod-ip pods/connect-test -- curl -s -I -v $$SERVER_IP
+```
+
+You can see that the `assert:` field in the `exec` test spec references the
+`SERVER_IP` variable:
+
+```yaml
+      err:
+        contains: "Host: $$SERVER_IP"
 ```
 
 ### Asserting resource fields using `assert.matches`

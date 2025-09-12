@@ -256,7 +256,7 @@ func (a *assertions) OK(ctx context.Context) bool {
 	if !a.lenOK() {
 		return false
 	}
-	if !a.matchesOK() {
+	if !a.matchesOK(ctx) {
 		return false
 	}
 	if !a.conditionsOK() {
@@ -347,10 +347,10 @@ func (a *assertions) lenOK() bool {
 
 // matchesOK returns true if the subject matches the Matches condition, false
 // otherwise
-func (a *assertions) matchesOK() bool {
+func (a *assertions) matchesOK(ctx context.Context) bool {
 	exp := a.exp
 	if exp.Matches != nil && a.hasSubject() {
-		matchObj := matchObjectFromAny(exp.Matches)
+		matchObj := matchObjectFromAny(ctx, exp.Matches)
 		res, ok := a.r.(*unstructured.Unstructured)
 		if ok {
 			delta := compareResourceToMatchObject(res, matchObj)

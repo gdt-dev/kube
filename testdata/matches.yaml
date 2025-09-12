@@ -2,6 +2,9 @@ name: matches
 description: create a deployment and check the matches condition succeeds
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: matches
 tests:
   - name: create-deployment
     kube:

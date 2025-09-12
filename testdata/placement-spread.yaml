@@ -2,6 +2,9 @@ name: placement-spread
 description: check placement spread assertions
 fixtures:
   - kind-three-workers-three-zones
+defaults:
+  kube:
+    namespace: placement-spread
 tests:
   - name: create-deployment
     kube:

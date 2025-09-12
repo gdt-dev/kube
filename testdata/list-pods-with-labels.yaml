@@ -2,6 +2,9 @@ name: list-pods-with-labels
 description: test list of Pod resources using label selector
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: list-pods-with-labels
 tests:
   - name: create-deployment
     kube:

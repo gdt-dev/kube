@@ -5,12 +5,15 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
 
+	gdtcontext "github.com/gdt-dev/gdt/context"
+	"github.com/gdt-dev/gdt/debug"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -129,7 +132,11 @@ func compareConditions(
 // an inline YAML string or a map[string]interface{}. The returned
 // map[string]interface{} is the collection of resource fields that we will
 // match against.
-func matchObjectFromAny(m interface{}) map[string]interface{} {
+func matchObjectFromAny(
+	ctx context.Context,
+	m any,
+) map[string]any {
+	var raw map[string]any
 	switch m := m.(type) {
 	case string:
 		var err error
@@ -146,18 +153,55 @@ func matchObjectFromAny(m interface{}) map[string]interface{} {
 		} else {
 			b = []byte(v)
 		}
-		var obj map[string]interface{}
+		var obj map[string]any
 		if err = yaml.Unmarshal(b, &obj); err != nil {
 			// NOTE(jaypipes): We already validated that the content could be
 			// unmarshaled at parse time. If we get an error here, just panic
 			// cuz there's nothing we can really do.
 			panic(err)
 		}
-		return obj
-	case map[string]interface{}:
-		return m
+		raw = obj
+	case map[string]any:
+		raw = m
 	}
-	return map[string]interface{}{}
+	// We need to replace any variable references in the match keys or values
+	// with the variable values from stored run data
+	return lo.MapEntries(raw, func(k string, v any) (string, any) {
+		return replaceVariablesInMapEntry(ctx, k, v)
+	})
+}
+
+func replaceVariablesInMapEntry(
+	ctx context.Context,
+	k string,
+	entry any,
+) (string, any) {
+	kRep := gdtcontext.ReplaceVariables(ctx, k)
+	if k != kRep {
+		debug.Println(
+			ctx,
+			"kube.assert: replaced match key: %s -> %s",
+			k, kRep,
+		)
+	}
+	switch entry := entry.(type) {
+	case string:
+		entryRep := gdtcontext.ReplaceVariables(ctx, entry)
+		if entry != entryRep {
+			debug.Println(
+				ctx,
+				"kube.assert: replaced match key %s value: %s -> %s",
+				k, entry, entryRep,
+			)
+		}
+		return kRep, entryRep
+	case map[string]any:
+		entry = lo.MapEntries(entry, func(k string, v any) (string, any) {
+			return replaceVariablesInMapEntry(ctx, k, v)
+		})
+		return kRep, entry
+	}
+	return k, entry
 }
 
 // delta collects differences between two objects.

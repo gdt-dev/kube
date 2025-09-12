@@ -2,6 +2,9 @@ name: json
 description: create a deployment and check the json condition succeeds
 fixtures:
   - kind
+defaults:
+  kube:
+    namespace: json
 tests:
   - name: create-deployment
     kube:

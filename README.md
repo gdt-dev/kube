@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gdt-dev/kube.svg)](https://pkg.go.dev/github.com/gdt-dev/kube)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gdt-dev/kube)](https://goreportcard.com/report/github.com/gdt-dev/kube)
-[![Build Status](https://github.com/gdt-dev/kube/actions/workflows/gate-tests.yml/badge.svg?branch=main)](https://github.com/gdt-dev/kube/actions)
+[![Build Status](https://github.com/gdt-dev/kube/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gdt-dev/kube/actions)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 <div style="float: left">
@@ -350,7 +350,7 @@ are executed in sequential order. If you want to have one test spec be able to
 use some output or value calculated or asserted in a previous step, you can use
 the `gdt` variable system.
 
-Here's an test scenario that shows how to define variables in a test spec and
+Here's a test scenario that shows how to define variables in a test spec and
 how to use those variables in later test specs.
 
 file: `testdata/var-save-restore.yaml`:
@@ -460,7 +460,7 @@ double-dollar-sign notation.
 > notation means that environment variable substitution does not impact the
 > referencing of `gdt` variables referenced in a test spec.
 
-In the third test spec, you see any example of referring to the `POD_NAME`
+In the third test spec, you see an example of referring to the `POD_NAME`
 variable in the `kube.get` field:
 
 ```yaml
@@ -512,7 +512,7 @@ Note that you can make use of the `gdt` variable system to pass values between
 
 file: `testdata/curl-pod-ip.yaml`
 
-```
+```yaml
 name: curl-pod-ip
 description: scenario showing how to create two NGinx Pods and test connectivity to internal Pod IP addresses
 fixtures:

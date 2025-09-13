@@ -7,8 +7,8 @@ package kube
 import (
 	"context"
 
-	"github.com/gdt-dev/gdt/api"
-	"github.com/gdt-dev/gdt/debug"
+	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/debug"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,7 +32,7 @@ func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 		debug.Println(ctx, "auto-created namespace: %s", ns)
 	}
 
-	var out interface{}
+	var out any
 	err = s.Kube.Do(ctx, c, ns, &out)
 	if err != nil {
 		if err == api.ErrTimeoutExceeded {
@@ -74,10 +74,10 @@ func ensureNamespace(
 	}
 	if nsObj == nil {
 		obj := &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "v1",
 				"kind":       "Namespace",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name": ns,
 				},
 			},

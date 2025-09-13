@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gdt-dev/gdt/api"
-	gdtjson "github.com/gdt-dev/gdt/assertion/json"
+	"github.com/gdt-dev/core/api"
+	gdtjson "github.com/gdt-dev/core/assertion/json"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -40,7 +40,7 @@ type Expect struct {
 	// from the Kubernetes API server. This is mostly good for unit/fuzz
 	// testing CRDs.
 	Unknown bool `yaml:"unknown,omitempty"`
-	// Matches is either a string or a map[string]interface{} containing the
+	// Matches is either a string or a map[string]any containing the
 	// resource that the `Kube.Get` should match against. If Matches is a
 	// string, the string can be either a file path to a YAML manifest or
 	// inline an YAML string containing the resource fields to compare.
@@ -87,7 +87,7 @@ type Expect struct {
 	// ```
 	//
 	// In fact, you don't need to use an inline multiline YAML string. You can
-	// use a `map[string]interface{}` as well:
+	// use a `map[string]any` as well:
 	//
 	// ```yaml
 	// tests:
@@ -99,7 +99,7 @@ type Expect struct {
 	//          status:
 	//            readyReplicas: 2
 	// ```
-	Matches interface{} `yaml:"matches,omitempty"`
+	Matches any `yaml:"matches,omitempty"`
 	// JSON contains the assertions about JSON data in a response from the
 	// Kubernetes API server.
 	JSON *gdtjson.Expect `yaml:"json,omitempty"`
@@ -223,7 +223,7 @@ type assertions struct {
 	// r is either an `unstructured.Unstructured` or an
 	// `unstructured.UnstructuredList` response returned from the kube client
 	// call.
-	r interface{}
+	r any
 }
 
 // Fail appends a supplied error to the set of failed assertions
@@ -479,7 +479,7 @@ func newAssertions(
 	c *connection,
 	exp *Expect,
 	err error,
-	r interface{},
+	r any,
 ) api.Assertions {
 	return &assertions{
 		c:        c,

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	gdtcontext "github.com/gdt-dev/gdt/context"
+	gdtcontext "github.com/gdt-dev/core/context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"

@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gdt-dev/core/api"
+	gdtjson "github.com/gdt-dev/core/assertion/json"
+	"github.com/gdt-dev/core/suite"
 	"github.com/gdt-dev/gdt"
-	"github.com/gdt-dev/gdt/api"
-	gdtjson "github.com/gdt-dev/gdt/assertion/json"
-	"github.com/gdt-dev/gdt/suite"
 	gdtkube "github.com/gdt-dev/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

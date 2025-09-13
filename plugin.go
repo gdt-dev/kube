@@ -5,8 +5,8 @@
 package kube
 
 import (
+	"github.com/gdt-dev/core/api"
 	"github.com/gdt-dev/gdt"
-	"github.com/gdt-dev/gdt/api"
 	"gopkg.in/yaml.v3"
 )
 

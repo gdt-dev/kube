@@ -7,7 +7,7 @@ package kube
 import (
 	"os"
 
-	"github.com/gdt-dev/gdt/api"
+	"github.com/gdt-dev/core/api"
 	"gopkg.in/yaml.v3"
 )
 

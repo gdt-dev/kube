@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gdt-dev/gdt/api"
+	"github.com/gdt-dev/core/api"
 )
 
 // KubeSpec is the complex type containing all of the Kubernetes-specific

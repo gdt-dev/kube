@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	gdtcontext "github.com/gdt-dev/gdt/context"
-	"github.com/gdt-dev/gdt/debug"
+	gdtcontext "github.com/gdt-dev/core/context"
+	"github.com/gdt-dev/core/debug"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -54,13 +54,13 @@ func compareConditions(
 	// the resource so we can do type-based lookups easier.
 	gcs := map[string]genericCondition{}
 	for _, condAny := range conds {
-		condMap, ok := condAny.(map[string]interface{})
+		condMap, ok := condAny.(map[string]any)
 		if !ok {
 			// this means the resource's Status.Conditions is not a slice of
 			// map[string]interface... which is also weird and unexpected, so
 			// just panic.
 			msg := fmt.Sprintf(
-				"found a resource %q with a non-map[string]interface{} "+
+				"found a resource %q with a non-map[string]any "+
 					"Status.Conditions member type: %T",
 				res.GetKind(), condAny,
 			)
@@ -128,9 +128,9 @@ func compareConditions(
 	return d
 }
 
-// matchObjectFromAny returns a map[string]interface{} given any of a filepath,
-// an inline YAML string or a map[string]interface{}. The returned
-// map[string]interface{} is the collection of resource fields that we will
+// matchObjectFromAny returns a map[string]any given any of a filepath,
+// an inline YAML string or a map[string]any. The returned
+// map[string]any is the collection of resource fields that we will
 // match against.
 func matchObjectFromAny(
 	ctx context.Context,
@@ -225,7 +225,7 @@ func (d *delta) Differences() []string {
 // differences between the supplied resource and the match object.
 func compareResourceToMatchObject(
 	res *unstructured.Unstructured,
-	match map[string]interface{},
+	match map[string]any,
 ) *delta {
 	d := &delta{differences: []string{}}
 	collectFieldDifferences("$", match, res.Object, d)
@@ -236,8 +236,8 @@ func compareResourceToMatchObject(
 // them to a supplied set of differences.
 func collectFieldDifferences(
 	fp string, // the "field path" to the field we are comparing...
-	match interface{},
-	subject interface{},
+	match any,
+	subject any,
 	delta *delta,
 ) {
 	if !typesComparable(match, subject) {
@@ -249,9 +249,9 @@ func collectFieldDifferences(
 		return
 	}
 	switch match.(type) {
-	case map[string]interface{}:
-		matchmap := match.(map[string]interface{})
-		subjectmap := subject.(map[string]interface{})
+	case map[string]any:
+		matchmap := match.(map[string]any)
+		subjectmap := subject.(map[string]any)
 		for matchk, matchv := range matchmap {
 			subjectv, ok := subjectmap[matchk]
 			newfp := fp + "." + matchk
@@ -263,9 +263,9 @@ func collectFieldDifferences(
 			collectFieldDifferences(newfp, matchv, subjectv, delta)
 		}
 		return
-	case []interface{}:
-		matchlist := match.([]interface{})
-		subjectlist := subject.([]interface{})
+	case []any:
+		matchlist := match.([]any)
+		subjectlist := subject.([]any)
 		if len(matchlist) != len(subjectlist) {
 			diff := fmt.Sprintf(
 				"%s had different lengths. expected %d but found %d",
@@ -360,7 +360,7 @@ func collectFieldDifferences(
 
 // typesComparable returns true if the two supplied things are comparable,
 // false otherwise
-func typesComparable(a, b interface{}) bool {
+func typesComparable(a, b any) bool {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 	at := av.Kind()
@@ -403,7 +403,7 @@ func typesComparable(a, b interface{}) bool {
 }
 
 // toUint64 takes an interface and returns a uint64
-func toUint64(v interface{}) uint64 {
+func toUint64(v any) uint64 {
 	switch v := v.(type) {
 	case uint64:
 		return v
@@ -420,7 +420,7 @@ func toUint64(v interface{}) uint64 {
 }
 
 // toInt64 takes an interface and returns an int64
-func toInt64(v interface{}) int64 {
+func toInt64(v any) int64 {
 	switch v := v.(type) {
 	case int64:
 		return v

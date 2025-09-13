@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/gdt-dev/gdt/api"
-	gdtcontext "github.com/gdt-dev/gdt/context"
-	"github.com/gdt-dev/gdt/debug"
+	"github.com/gdt-dev/core/api"
+	gdtcontext "github.com/gdt-dev/core/context"
+	"github.com/gdt-dev/core/debug"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -196,7 +196,7 @@ func (f *KindFixture) HasState(key string) bool {
 	return false
 }
 
-func (f *KindFixture) State(key string) interface{} {
+func (f *KindFixture) State(key string) any {
 	key = strings.ToLower(key)
 	switch key {
 	case gdtkube.StateKeyConfigBytes:

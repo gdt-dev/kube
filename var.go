@@ -9,10 +9,9 @@ import (
 	"fmt"
 
 	"github.com/PaesslerAG/jsonpath"
-	"github.com/gdt-dev/gdt/api"
-	gdtjson "github.com/gdt-dev/gdt/assertion/json"
-	"github.com/gdt-dev/gdt/debug"
-	"gopkg.in/yaml.v3"
+	"github.com/gdt-dev/core/api"
+	gdtjson "github.com/gdt-dev/core/assertion/json"
+	"github.com/gdt-dev/core/debug"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -28,42 +27,6 @@ type VarEntry struct {
 	// instructions on how to extract a particular field from a Kubernetes
 	// resource fetched in the `kube.get` command.
 	From string `yaml:"from"`
-}
-
-// UnmarshalYAML is a custom unmarshaler that ensures that JSONPath expressions
-// contained in the VarEntry are valid.
-func (e *VarEntry) UnmarshalYAML(node *yaml.Node) error {
-	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
-	}
-	// maps/structs are stored in a top-level Node.Content field which is a
-	// concatenated slice of Node pointers in pairs of key/values.
-	for i := 0; i < len(node.Content); i += 2 {
-		keyNode := node.Content[i]
-		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
-		}
-		key := keyNode.Value
-		valNode := node.Content[i+1]
-		switch key {
-		case "from":
-			if valNode.Kind != yaml.ScalarNode {
-				return api.ExpectedScalarAt(valNode)
-			}
-			var path string
-			if err := valNode.Decode(&path); err != nil {
-				return err
-			}
-			if len(path) == 0 || path[0] != '$' {
-				return gdtjson.JSONPathInvalidNoRoot(path, valNode)
-			}
-			if _, err := lang.NewEvaluable(path); err != nil {
-				return gdtjson.JSONPathInvalid(path, err, valNode)
-			}
-			e.From = path
-		}
-	}
-	return nil
 }
 
 // Variables allows the test author to save arbitrary data to the test scenario,

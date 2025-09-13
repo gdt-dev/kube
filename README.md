@@ -79,7 +79,7 @@ All `gdt` scenarios have the following fields:
 * `tests`: list of [`Spec`][basespec] specializations that represent the
   runnable test units in the test scenario.
 
-[basespec]: https://github.com/gdt-dev/gdt/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/types/spec.go#L27-L44
+[basespec]: https://github.com/gdt-dev/core/blob/023f92ee3468852d1d477df91cf42789e472b3b5/api/spec.go#L27-L48
 
 ### `gdt-kube` test configuration defaults
 
@@ -133,7 +133,7 @@ All `gdt` test specs have the same [base fields][base-spec-fields]:
 * `wait.after`: a string duration of time that gdt should wait after executing
   the test unit's action.
 
-[wait]: https://github.com/gdt-dev/gdt/blob/2791e11105fd3c36d1f11a7d111e089be7cdc84c/types/wait.go#L11-L25
+[wait]: https://github.com/gdt-dev/core/blob/023f92ee3468852d1d477df91cf42789e472b3b5/api/wait.go#L11-L25
 
 `gdt-kube` test specs have some additional fields that allow you to take some
 action against a Kubernetes API and assert that the response from the API

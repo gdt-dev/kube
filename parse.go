@@ -6,11 +6,13 @@ package kube
 
 import (
 	"os"
+	"strings"
 
-	"github.com/gdt-dev/gdt/api"
-	gdtjson "github.com/gdt-dev/gdt/assertion/json"
+	"github.com/gdt-dev/core/api"
+	gdtjson "github.com/gdt-dev/core/assertion/json"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (s *Spec) UnmarshalYAML(node *yaml.Node) error {
@@ -369,6 +371,119 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalYAML is a custom unmarshaler that understands that the value of the
+// ResourceIdentifier can be either a string or a selector.
+func (r *ResourceIdentifier) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.ScalarNode && node.Kind != yaml.MappingNode {
+		return api.ExpectedScalarOrMapAt(node)
+	}
+	var s string
+	// A resource identifier can be a string of the form {type}/{name} or
+	// {type}.
+	if err := node.Decode(&s); err == nil {
+		if strings.ContainsAny(s, " ,;\n\t\r") {
+			return InvalidResourceSpecifier(s, node)
+		}
+		if strings.Count(s, "/") > 1 {
+			return InvalidResourceSpecifier(s, node)
+		}
+		r.Arg, r.Name = splitArgName(s)
+		return nil
+	}
+	// Otherwise the resource identifier should be specified broken out as a
+	// struct with a `type` and `labels` field.
+	var ri resourceIdentifierWithSelector
+	if err := node.Decode(&ri); err != nil {
+		return err
+	}
+	_, err := labels.ValidatedSelectorFromSet(ri.Labels)
+	if err != nil {
+		return InvalidWithLabels(err, node)
+	}
+	r.Arg = ri.Type
+	r.Name = ri.Name
+	r.Labels = ri.Labels
+	return nil
+}
+
+// UnmarshalYAML is a custom unmarshaler that understands that the value of the
+// ResourceIdentifierOrFile can be either a string or a selector.
+func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.ScalarNode && node.Kind != yaml.MappingNode {
+		return api.ExpectedScalarOrMapAt(node)
+	}
+	var s string
+	// A resource identifier can be a filepath, a string of the form
+	// {type}/{name} or {type}.
+	if err := node.Decode(&s); err == nil {
+		if probablyFilePath(s) {
+			if !fileExists(s) {
+				return api.FileNotFound(s, node)
+			}
+			r.fp = s
+			return nil
+		}
+		if strings.ContainsAny(s, " ,;\n\t\r") {
+			return InvalidResourceSpecifierOrFilepath(s, node)
+		}
+		if strings.Count(s, "/") > 1 {
+			return InvalidResourceSpecifierOrFilepath(s, node)
+		}
+		r.Arg, r.Name = splitArgName(s)
+		return nil
+	}
+	// Otherwise the resource identifier should be specified broken out as a
+	// struct with a `type` and `labels` field.
+	var ri resourceIdentifierWithSelector
+	if err := node.Decode(&ri); err != nil {
+		return err
+	}
+	_, err := labels.ValidatedSelectorFromSet(ri.Labels)
+	if err != nil {
+		return InvalidWithLabels(err, node)
+	}
+	r.Arg = ri.Type
+	r.Name = ri.Name
+	r.Labels = ri.Labels
+	return nil
+}
+
+// UnmarshalYAML is a custom unmarshaler that ensures that JSONPath expressions
+// contained in the VarEntry are valid.
+func (e *VarEntry) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return api.ExpectedMapAt(node)
+	}
+	// maps/structs are stored in a top-level Node.Content field which is a
+	// concatenated slice of Node pointers in pairs of key/values.
+	for i := 0; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		if keyNode.Kind != yaml.ScalarNode {
+			return api.ExpectedScalarAt(keyNode)
+		}
+		key := keyNode.Value
+		valNode := node.Content[i+1]
+		switch key {
+		case "from":
+			if valNode.Kind != yaml.ScalarNode {
+				return api.ExpectedScalarAt(valNode)
+			}
+			var path string
+			if err := valNode.Decode(&path); err != nil {
+				return err
+			}
+			if len(path) == 0 || path[0] != '$' {
+				return gdtjson.JSONPathInvalidNoRoot(path, valNode)
+			}
+			if _, err := lang.NewEvaluable(path); err != nil {
+				return gdtjson.JSONPathInvalid(path, err, valNode)
+			}
+			e.From = path
+		}
+	}
+	return nil
+}
+
 // moreThanOneAction returns true if the test author has specified more than a
 // single action in the KubeSpec.
 func moreThanOneAction(a *Action) bool {
@@ -391,4 +506,25 @@ func moreThanOneAction(a *Action) bool {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// splitArgName returns the resource or kind arg string for a supplied `Get` or
+// `Delete` command where the user can specify either a resource kind or alias,
+// e.g. "pods" or "po", or the resource kind followed by a forward slash and a
+// resource name.
+//
+// Valid resource/kind arg plus name strings:
+//
+// * "pods"
+// * "pod"
+// * "pods/name"
+// * "pod/name"
+// * "deployments.apps/name"
+// * "deployments.v1.apps/name"
+// * "Deployment/name"
+// * "Deployment.apps/name"
+// * "Deployment.v1.apps/name"
+func splitArgName(subject string) (string, string) {
+	arg, name, _ := strings.Cut(subject, "/")
+	return arg, name
 }

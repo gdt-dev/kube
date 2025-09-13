@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	gdtcontext "github.com/gdt-dev/core/context"
 	"github.com/gdt-dev/gdt"
-	gdtcontext "github.com/gdt-dev/gdt/context"
 	"github.com/stretchr/testify/require"
 
 	kindfix "github.com/gdt-dev/kube/fixtures/kind"

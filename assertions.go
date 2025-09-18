@@ -14,7 +14,6 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	gdtjson "github.com/gdt-dev/core/assertion/json"
-	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -175,27 +174,6 @@ type conditionMatch struct {
 // on.
 type ConditionMatch struct {
 	conditionMatch
-}
-
-// UnmarshalYAML is a custom unmarshaler that understands that the value of the
-// ConditionMatch can be either a string, a slice of strings, or an object with .
-func (m *ConditionMatch) UnmarshalYAML(node *yaml.Node) error {
-	if node.Kind == yaml.ScalarNode || node.Kind == yaml.SequenceNode {
-		var fs api.FlexStrings
-		if err := node.Decode(&fs); err != nil {
-			return ConditionMatchInvalid(node, err)
-		}
-		m.conditionMatch = conditionMatch{Status: &fs}
-	}
-	if node.Kind == yaml.MappingNode {
-		var cm conditionMatch
-		if err := node.Decode(&cm); err != nil {
-			return ConditionMatchInvalid(node, err)
-		}
-		m.conditionMatch = cm
-		return nil
-	}
-	return nil
 }
 
 // PlacementAssertion describes an expectation for Pod scheduling outcomes.

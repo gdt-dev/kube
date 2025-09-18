@@ -40,7 +40,7 @@ jobs:
      - name: run non-Kind tests
        env:
          SKIP_KIND: 1
-       run: make test
+       run: go test -v ./...
   test-all:
     strategy:
       matrix:

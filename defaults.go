@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/gdt-dev/core/api"
+	"github.com/gdt-dev/core/parse"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,21 +39,21 @@ type Defaults struct {
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
-		return api.ExpectedMapAt(node)
+		return parse.ExpectedMapAt(node)
 	}
 	// maps/structs are stored in a top-level Node.Content field which is a
 	// concatenated slice of Node pointers in pairs of key/values.
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if keyNode.Kind != yaml.ScalarNode {
-			return api.ExpectedScalarAt(keyNode)
+			return parse.ExpectedScalarAt(keyNode)
 		}
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
 		case "kube":
 			if valNode.Kind != yaml.MappingNode {
-				return api.ExpectedMapAt(valNode)
+				return parse.ExpectedMapAt(valNode)
 			}
 			hd := kubeDefaults{}
 			if err := valNode.Decode(&hd); err != nil {
@@ -63,16 +64,16 @@ func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {
 			continue
 		}
 	}
-	return d.validate()
+	return d.validate(node)
 }
 
 // validate determines if any specified defaults are valid.
-func (d *Defaults) validate() error {
+func (d *Defaults) validate(node *yaml.Node) error {
 	if d.Config != "" {
 		f, err := os.Open(d.Config)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return KubeConfigNotFound(d.Config)
+				return KubeConfigNotFoundAt(d.Config, node)
 			}
 			return err
 		}

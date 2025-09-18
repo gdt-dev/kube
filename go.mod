@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/gdt-dev/core v1.9.9
+	github.com/gdt-dev/core v1.9.11
 	github.com/gdt-dev/gdt v1.9.9
 	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.11.1

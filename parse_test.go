@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/gdt-dev/core/api"
-	gdtjson "github.com/gdt-dev/core/assertion/json"
+	"github.com/gdt-dev/core/parse"
 	"github.com/gdt-dev/core/suite"
 	"github.com/gdt-dev/gdt"
 	gdtkube "github.com/gdt-dev/kube"
@@ -25,7 +25,8 @@ func TestFailureBadDefaults(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrExpectedMap)
+	assert.ErrorContains(err, "expected map")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -37,8 +38,8 @@ func TestFailureDefaultsConfigNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrKubeConfigNotFound)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "specified kube config path")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -50,8 +51,8 @@ func TestFailureBothShortcutAndKubeSpec(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrEitherShortcutOrKubeSpec)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "either specify a full KubeSpec")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -63,8 +64,8 @@ func TestFailureMoreThanOneKubeAction(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrMoreThanOneKubeAction)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "you may only specify a single Kubernetes action")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -76,8 +77,8 @@ func TestFailureInvalidResourceSpecifierNoMultipleResources(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalid)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "invalid resource specifier")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -89,8 +90,8 @@ func TestFailureInvalidResourceSpecifierMutipleForwardSlashes(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalid)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "invalid resource specifier")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -102,8 +103,8 @@ func TestFailureInvalidDeleteNotFilepathOrResourceSpecifier(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrResourceSpecifierInvalidOrFilepath)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "invalid resource specifier or filepath")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -115,8 +116,8 @@ func TestFailureCreateFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrFileNotFound)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "file not found")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -128,8 +129,8 @@ func TestFailureDeleteFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrFileNotFound)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "file not found")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -141,8 +142,8 @@ func TestFailureBadMatchesFileNotFound(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrFileNotFound)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "file not found")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -154,8 +155,8 @@ func TestFailureBadMatchesInvalidYAML(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrMatchesInvalid)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "`kube.assert.matches` not well-formed")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -167,8 +168,8 @@ func TestFailureBadMatchesEmpty(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrExpectedMapOrYAMLString)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "expected either map[string]interface{} or a string with embedded YAML")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -180,8 +181,8 @@ func TestFailureBadMatchesNotMapAny(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrMatchesInvalid)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "`kube.assert.matches` not well-formed")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -193,8 +194,8 @@ func TestFailureBadPlacementNotObject(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrExpectedMap)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "expected map")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -206,8 +207,8 @@ func TestWithLabelsInvalid(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtkube.ErrWithLabelsInvalid)
-	assert.ErrorIs(err, api.ErrParse)
+	assert.ErrorContains(err, "with labels invalid")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -219,7 +220,8 @@ func TestFailureBadVarType(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, api.ErrExpectedMap)
+	assert.ErrorContains(err, "expected map")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -231,7 +233,8 @@ func TestFailureBadVarJSONPathNoRoot(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtjson.ErrJSONPathInvalidNoRoot)
+	assert.ErrorContains(err, "expression must start with")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 
@@ -243,7 +246,8 @@ func TestFailureBadVarJSONPath(t *testing.T) {
 
 	s, err := gdt.From(fp)
 	require.NotNil(err)
-	assert.ErrorIs(err, gdtjson.ErrJSONPathInvalid)
+	assert.ErrorContains(err, "JSONPath invalid")
+	assert.Error(err, &parse.Error{})
 	require.Nil(s)
 }
 

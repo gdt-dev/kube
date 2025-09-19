@@ -1,6 +1,7 @@
 name: delete-resource-not-found
 description: delete resource not found
-
+fixtures:
+  - kind
 tests:
  - kube:
      delete: pods/doesnotexist

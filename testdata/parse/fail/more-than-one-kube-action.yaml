@@ -2,5 +2,5 @@ name: more-than-one-kube-action
 description: invalid kube spec with more than one Kubernetes action in kube field
 tests:
  - kube:
-     create: testdata/manifests/nginx-pod.yaml
-     apply: testdata/manifests/nginx-pod.yaml
+     create: ../../manifests/nginx-pod.yaml
+     apply: ../../manifests/nginx-pod.yaml

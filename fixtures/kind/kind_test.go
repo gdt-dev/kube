@@ -54,7 +54,7 @@ func TestOneControlPlaneOneWorker(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(s)
 
-	kindCfgPath := filepath.Join("testdata", "kind-config-one-cp-one-worker.yaml")
+	kindCfgPath := "kind-config-one-cp-one-worker.yaml"
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)

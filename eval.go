@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/gdt-dev/core/api"
+	gdtcontext "github.com/gdt-dev/core/context"
 	"github.com/gdt-dev/core/debug"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +30,7 @@ func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 		return nil, err
 	}
 	if nsCreated {
-		debug.Println(ctx, "auto-created namespace: %s", ns)
+		debug.Printf(ctx, "auto-created namespace: %s", ns)
 	}
 
 	var out any
@@ -45,12 +46,63 @@ func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 	a := newAssertions(c, s.Assert, err, out)
 	if a.OK(ctx) {
 		res := api.NewResult()
+		if nsCreated {
+			res.AddCleanup(cleanupAutoNamespace(ctx, c, ns))
+		}
 		if err := saveVars(ctx, s.Var, out, res); err != nil {
 			return nil, err
 		}
 		return res, nil
 	}
 	return api.NewResult(api.WithFailures(a.Failures()...)), nil
+}
+
+// cleanupAutoNamespace returns a cleanup function that deletes the
+// auto-created namespace.
+func cleanupAutoNamespace(
+	ctx context.Context,
+	c *connection,
+	ns string,
+) func() {
+	debug.Printf(
+		ctx, "registered cleanup for auto-created namespace: %s", ns,
+	)
+	// NOTE(jaypipes): We need to create a new context that will be used to
+	// execute the cleanup because the context supplied is for the spec and
+	// that context has its own lifecycle (and gets a cancel/timeout that will
+	// be called before the cleanup function runs...
+	cleanupCtx := context.Background()
+	tu := gdtcontext.TestUnit(ctx)
+	if tu != nil {
+		cleanupCtx = gdtcontext.SetTestUnit(cleanupCtx, tu)
+	}
+	debuggers := gdtcontext.Debug(ctx)
+	if len(debuggers) > 0 {
+		cleanupCtx = gdtcontext.SetDebug(cleanupCtx, debuggers...)
+	}
+	trace := gdtcontext.Trace(ctx)
+	cleanupCtx = gdtcontext.SetTrace(cleanupCtx, trace)
+	return func() {
+		res, err := c.gvrFromArg("namespaces")
+		if err != nil {
+			debug.Printf(cleanupCtx, "failed to get GVR for namespace")
+			return
+		}
+
+		err = c.client.Resource(res).Delete(
+			cleanupCtx,
+			ns,
+			metav1.DeleteOptions{},
+		)
+		if err != nil {
+			debug.Printf(
+				cleanupCtx, "failed to delete auto-created namespace %s: %s",
+				ns, err,
+			)
+			return
+		}
+		debug.Printf(cleanupCtx, "deleted auto-created namespace: %s", ns)
+	}
 }
 
 // ensureNamespace automatically creates a supplied Kubernetes Namespace if it

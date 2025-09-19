@@ -1,5 +1,6 @@
 name: parse
 description: a scenario with several well-formed kube test specs
+
 tests:
  - name: create a pod from YAML using kube.create shortcut
    kube.create: |
@@ -11,8 +12,9 @@ tests:
        containers:
         - name: nginx
           image: nginx:1.7.9
+
  - name: apply a pod from a file using kube.apply shortcut
-   kube.apply: testdata/manifests/nginx-pod.yaml
+   kube.apply: manifests/nginx-pod.yaml
  - name: create a pod from YAML
    kube:
      create: |
@@ -24,36 +26,44 @@ tests:
          containers:
           - name: nginx
             image: nginx:1.7.9
+
  - name: delete a pod from a file
    kube:
-     delete: testdata/manifests/nginx-pod.yaml
+     delete: manifests/nginx-pod.yaml
+
  - name: fetch a pod via kube.get shortcut
    kube.get: pods/name
+
  - name: fetch a pod via long-form kube:get
    kube:
      get: pods/name
+
  - name: fetch a pod via kube.get shortcut to long-form resource identifier with labels
    kube.get:
      type: pods
      labels:
        app: nginx
+
  - name: fetch a pod via kube:get long-form resource identifier with labels
    kube:
      get:
        type: pods
        labels:
          app: nginx
+
  - name: fetch a pod with envvar substitution
    kube:
      get: pods/${pod_name}
    assert:
      len: 0
+
  - name: define a gdt variable
    kube:
      get: pods/name
    var:
      POD:
        from: $.metadata.name
+
  - name: fetch a pod with gdt variable system substitution
    kube:
      get: pods/$$POD

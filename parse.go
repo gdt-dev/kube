@@ -13,6 +13,7 @@ import (
 	gdtjson "github.com/gdt-dev/core/assertion/json"
 	"github.com/gdt-dev/core/parse"
 	"github.com/samber/lo"
+	"github.com/theory/jsonpath"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -618,7 +619,7 @@ func (e *VarEntry) UnmarshalYAML(node *yaml.Node) error {
 			if len(path) == 0 || path[0] != '$' {
 				return gdtjson.JSONPathInvalidNoRoot(path, valNode)
 			}
-			if _, err := lang.NewEvaluable(path); err != nil {
+			if _, err := jsonpath.Parse(path); err != nil {
 				return gdtjson.JSONPathInvalid(path, err, valNode)
 			}
 			e.From = path

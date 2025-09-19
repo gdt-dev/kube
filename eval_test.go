@@ -22,11 +22,11 @@ var stdKindFix = kindfix.New(
 	kindfix.WithRetainOnStop(),
 )
 
-func TestListPodsEmpty(t *testing.T) {
+func TestKindListPodsEmpty(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "list-pods-empty.yaml")
+	fp := filepath.Join("testdata", "kind", "list-pods-empty.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -39,11 +39,11 @@ func TestListPodsEmpty(t *testing.T) {
 	require.Nil(err, "%s", err)
 }
 
-func TestGetPodNotFound(t *testing.T) {
+func TestKindGetPodNotFound(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "get-pod-not-found.yaml")
+	fp := filepath.Join("testdata", "kind", "get-pod-not-found.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -56,11 +56,11 @@ func TestGetPodNotFound(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestCreateUnknownResource(t *testing.T) {
+func TestKindCreateUnknownResource(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "create-unknown-resource.yaml")
+	fp := filepath.Join("testdata", "kind", "create-unknown-resource.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -73,11 +73,11 @@ func TestCreateUnknownResource(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestSameNamedKind(t *testing.T) {
+func TestKindSameNamedKind(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "same-named-kind.yaml")
+	fp := filepath.Join("testdata", "kind", "same-named-kind.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -90,11 +90,11 @@ func TestSameNamedKind(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestDeleteResourceNotFound(t *testing.T) {
+func TestKindDeleteResourceNotFound(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "delete-resource-not-found.yaml")
+	fp := filepath.Join("testdata", "kind", "delete-resource-not-found.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -107,11 +107,11 @@ func TestDeleteResourceNotFound(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestDeleteUnknownResource(t *testing.T) {
+func TestKindDeleteUnknownResource(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "delete-unknown-resource.yaml")
+	fp := filepath.Join("testdata", "kind", "delete-unknown-resource.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -124,11 +124,11 @@ func TestDeleteUnknownResource(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestPodCreateGetDelete(t *testing.T) {
+func TestKindPodCreateGetDelete(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "create-get-delete-pod.yaml")
+	fp := filepath.Join("testdata", "kind", "create-get-delete-pod.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -141,11 +141,11 @@ func TestPodCreateGetDelete(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestMatches(t *testing.T) {
+func TestKindMatches(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "matches.yaml")
+	fp := filepath.Join("testdata", "kind", "matches.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -158,11 +158,11 @@ func TestMatches(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestConditions(t *testing.T) {
+func TestKindConditions(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "conditions.yaml")
+	fp := filepath.Join("testdata", "kind", "conditions.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -175,11 +175,11 @@ func TestConditions(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestJSON(t *testing.T) {
+func TestKindJSON(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "json.yaml")
+	fp := filepath.Join("testdata", "kind", "json.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -192,11 +192,11 @@ func TestJSON(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestApply(t *testing.T) {
+func TestKindApply(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "apply-deployment.yaml")
+	fp := filepath.Join("testdata", "kind", "apply-deployment.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -209,13 +209,13 @@ func TestApply(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestEnvvarSubstitution(t *testing.T) {
+func TestKindEnvvarSubstitution(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
 	t.Setenv("pod_name", "foo")
 
-	fp := filepath.Join("testdata", "envvar-substitution.yaml")
+	fp := filepath.Join("testdata", "kind", "envvar-substitution.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -228,11 +228,11 @@ func TestEnvvarSubstitution(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestWithLabels(t *testing.T) {
+func TestKindWithLabels(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "list-pods-with-labels.yaml")
+	fp := filepath.Join("testdata", "kind", "list-pods-with-labels.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -245,11 +245,11 @@ func TestWithLabels(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestVarSaveRestore(t *testing.T) {
+func TestKindVarSaveRestore(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "var-save-restore.yaml")
+	fp := filepath.Join("testdata", "kind", "var-save-restore.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)
@@ -264,11 +264,11 @@ func TestVarSaveRestore(t *testing.T) {
 	require.Nil(err)
 }
 
-func TestCurlPodIP(t *testing.T) {
+func TestKindCurlPodIP(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
 
-	fp := filepath.Join("testdata", "curl-pod-ip.yaml")
+	fp := filepath.Join("testdata", "kind", "curl-pod-ip.yaml")
 
 	s, err := gdt.From(fp)
 	require.Nil(err)

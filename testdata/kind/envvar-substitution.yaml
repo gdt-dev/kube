@@ -1,19 +1,17 @@
 name: envvar-substitution
 description: create, get and delete a Pod with envvar substitutions
-
+fixtures:
+  - kind
 tests:
   - name: create-${pod_name}
     kube:
-      create: testdata/manifests/nginx-pod-envsubst.yaml
-
+      create: ../manifests/nginx-pod-envsubst.yaml
   - name: foo-exists
     kube:
       get: pods/foo
-
   - name: delete-$pod_name
     kube:
       delete: pods/$pod_name
-
   - name: ${pod_name}-no-longer-exists
     kube:
       get: pods/${pod_name}

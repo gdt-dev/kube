@@ -1,15 +1,14 @@
 name: list-pods-with-labels
 description: test list of Pod resources using label selector
-
+fixtures:
+  - kind
 defaults:
   kube:
     namespace: list-pods-with-labels
-
 tests:
   - name: create-deployment
     kube:
-      create: testdata/manifests/nginx-deployment.yaml
-
+      create: ../manifests/nginx-deployment.yaml
   - name: verify-pods-with-app-nginx-label
     kube:
       get:
@@ -18,7 +17,6 @@ tests:
           app: nginx
     assert:
       len: 2
-
   - name: verify-no-pods-with-app-noexist-label
     kube:
       get:
@@ -27,7 +25,6 @@ tests:
           app: noexist
     assert:
       len: 0
-
   - name: delete-deployment
     kube:
       delete: deployments/nginx

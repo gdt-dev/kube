@@ -1,23 +1,20 @@
 name: create-get-delete-pod
 description: create, get and delete a Pod
-
+fixtures:
+  - kind
 defaults:
   kube:
     namespace: create-get-delete-pod
-
 tests:
   - name: create-pod
     kube:
-      create: testdata/manifests/nginx-pod.yaml
-
+      create: ../manifests/nginx-pod.yaml
   - name: pod-exists
     kube:
       get: pods/nginx
-
   - name: delete-pod
     kube:
       delete: pods/nginx
-
   - name: pod-no-longer-exists
     kube:
       get: pods/nginx

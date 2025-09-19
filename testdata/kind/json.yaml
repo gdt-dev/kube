@@ -1,15 +1,14 @@
 name: json
 description: create a deployment and check the json condition succeeds
-
+fixtures:
+  - kind
 defaults:
   kube:
     namespace: json
-
 tests:
   - name: create-deployment
     kube:
-      create: testdata/manifests/nginx-deployment.yaml
-
+      create: ../manifests/nginx-deployment.yaml
   - name: deployment-json-assertions
     timeout:
       after: 20s
@@ -24,7 +23,6 @@ tests:
         path_formats:
           $.metadata.uid: uuid4
           $.metadata.creationTimestamp: date-time
-
   - name: delete-deployment
     kube:
       delete: deployments/nginx

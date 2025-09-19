@@ -29,7 +29,7 @@ func TestPlacementSpread(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(s)
 
-	kindCfgPath := filepath.Join("testdata", "kind-config-three-workers-three-zones.yaml")
+	kindCfgPath := "kind-config-three-workers-three-zones.yaml"
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)

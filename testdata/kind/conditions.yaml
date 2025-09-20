@@ -1,22 +1,20 @@
 name: conditions
 description: create a deployment and check the Ready condition eventually equals True
-
+fixtures:
+  - kind
 defaults:
   kube:
     namespace: conditions
-
 tests:
   - name: create-deployment
     kube:
-      create: testdata/manifests/nginx-deployment.yaml
-
+      create: ../manifests/nginx-deployment.yaml
   - name: deployment-immediately-has-false-or-unknown
     kube:
       get: deployments/nginx
     assert:
       conditions:
         available: [false, unknown]
-
   - name: deployment-has-true-progressing-condition
     timeout:
       after: 2s
@@ -25,7 +23,6 @@ tests:
     assert:
       conditions:
         progressing: true
-
   - name: deployment-last-progressing-reason
     timeout:
       after: 20s
@@ -36,7 +33,6 @@ tests:
         progressing:
           status: true
           reason: NewReplicaSetAvailable
-
   - name: delete-deployment
     kube:
       delete: deployments/nginx

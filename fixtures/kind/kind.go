@@ -76,13 +76,13 @@ func (f *KindFixture) Start(ctx context.Context) error {
 		f.ClusterName = kindconst.DefaultClusterName
 	}
 	if f.isRunning() {
-		debug.Println(ctx, "cluster %s already running", f.ClusterName)
+		debug.Printf(ctx, "cluster %s already running", f.ClusterName)
 		f.runningBeforeStart = true
 		return f.waitForDefaultServiceAccount(ctx)
 	}
 	opts := []cluster.CreateOption{}
 	if f.ConfigPath != "" {
-		debug.Println(
+		debug.Printf(
 			ctx, "using custom kind config %s for cluster %s",
 			f.ConfigPath, f.ClusterName,
 		)
@@ -91,10 +91,10 @@ func (f *KindFixture) Start(ctx context.Context) error {
 	if err := f.provider.Create(f.ClusterName, opts...); err != nil {
 		return err
 	}
-	debug.Println(ctx, "cluster %s successfully created", f.ClusterName)
+	debug.Printf(ctx, "cluster %s successfully created", f.ClusterName)
 	if !f.retainOnStop {
 		f.deleteOnStop = true
-		debug.Println(ctx, "cluster %s will be deleted on stop", f.ClusterName)
+		debug.Printf(ctx, "cluster %s will be deleted on stop", f.ClusterName)
 	}
 	return f.waitForDefaultServiceAccount(ctx)
 }
@@ -153,7 +153,7 @@ func (f *KindFixture) waitForDefaultServiceAccount(ctx context.Context) error {
 			}
 			found = false
 		}
-		debug.Println(
+		debug.Printf(
 			ctx, "check for default service account: attempt %d, found: %v",
 			attempts, found,
 		)
@@ -172,18 +172,18 @@ func (f *KindFixture) Stop(ctx context.Context) {
 		ctx = gdtcontext.PopTrace(ctx)
 	}()
 	if !f.isRunning() {
-		debug.Println(ctx, "cluster %s not running", f.ClusterName)
+		debug.Printf(ctx, "cluster %s not running", f.ClusterName)
 		return
 	}
 	if f.runningBeforeStart && !f.deleteOnStop {
-		debug.Println(ctx, "cluster %s was running before start and deleteOnStop=false so not deleting", f.ClusterName)
+		debug.Printf(ctx, "cluster %s was running before start and deleteOnStop=false so not deleting", f.ClusterName)
 		return
 	}
 	if f.deleteOnStop {
 		if err := f.provider.Delete(f.ClusterName, ""); err != nil {
 			panic(err)
 		}
-		debug.Println(ctx, "cluster %s successfully deleted", f.ClusterName)
+		debug.Printf(ctx, "cluster %s successfully deleted", f.ClusterName)
 	}
 }
 

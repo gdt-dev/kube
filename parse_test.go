@@ -295,7 +295,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Apply: "testdata/manifests/nginx-pod.yaml",
+					Apply: "manifests/nginx-pod.yaml",
 				},
 			},
 		},
@@ -320,7 +320,7 @@ spec:
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
 					Delete: gdtkube.NewResourceIdentifierOrFile(
-						"testdata/manifests/nginx-pod.yaml",
+						"manifests/nginx-pod.yaml",
 						"", "", nil,
 					),
 				},

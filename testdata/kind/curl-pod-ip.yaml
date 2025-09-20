@@ -1,14 +1,14 @@
 name: curl-pod-ip
 description: scenario showing how to create two NGinx Pods and test connectivity to internal Pod IP addresses
-
+fixtures:
+  - kind
 defaults:
   kube:
     namespace: curl-pod-ip
-
 tests:
   - name: create-server
     kube:
-      create: testdata/manifests/nginx-server.yaml
+      create: ../manifests/nginx-server.yaml
 
   - name: get-server-pod-ip
     kube:
@@ -23,7 +23,7 @@ tests:
 
   - name: create-connect-tester
     kube:
-      create: testdata/manifests/nginx-connect-test.yaml
+      create: ../manifests/nginx-connect-test.yaml
 
   - name: wait-connect-test-ready
     kube:

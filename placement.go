@@ -164,14 +164,14 @@ func (a *assertions) placementSpreadOK(
 	// Pods are evenly spread across domains defined by the topology key when
 	// the min and max number of pods on each domain is not greater than 1.
 	for domain, nodes := range domainNodes {
-		debug.Println(
+		debug.Printf(
 			ctx, "placement-spread: domain: %s, unique nodes: %d",
 			domain, len(nodes),
 		)
 		if len(nodes) > 0 {
 			nodeCounts := lo.Values(podDomains[domain])
 
-			debug.Println(
+			debug.Printf(
 				ctx, "placement-spread: domain: %s, pods per node: %d",
 				domain, nodeCounts,
 			)

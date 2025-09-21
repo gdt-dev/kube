@@ -125,7 +125,7 @@ func (a *Action) get(
 	arg := a.Get.Arg
 	argRep := gdtcontext.ReplaceVariables(ctx, arg)
 	if arg != argRep {
-		debug.Println(
+		debug.Printf(
 			ctx,
 			"kube.get: replaced arg: %s -> %s",
 			arg, argRep,
@@ -145,7 +145,7 @@ func (a *Action) get(
 	} else {
 		nameRep := gdtcontext.ReplaceVariables(ctx, name)
 		if name != nameRep {
-			debug.Println(
+			debug.Printf(
 				ctx,
 				"kube.get: replaced name: %s -> %s",
 				name, nameRep,
@@ -177,7 +177,7 @@ func (a *Action) doList(
 		opts.LabelSelector = labelsStr
 	}
 	if c.resourceNamespaced(res) {
-		debug.Println(
+		debug.Printf(
 			ctx, "kube.get: %s%s (ns: %s)",
 			resName, labelSelString, ns,
 		)
@@ -185,7 +185,7 @@ func (a *Action) doList(
 			ctx, opts,
 		)
 	}
-	debug.Println(
+	debug.Printf(
 		ctx, "kube.get: %s%s (non-namespaced resource)",
 		resName, labelSelString,
 	)
@@ -204,7 +204,7 @@ func (a *Action) doGet(
 ) (*unstructured.Unstructured, error) {
 	resName := res.Resource
 	if c.resourceNamespaced(res) {
-		debug.Println(
+		debug.Printf(
 			ctx, "kube.get: %s/%s (ns: %s)",
 			resName, name, ns,
 		)
@@ -214,7 +214,7 @@ func (a *Action) doGet(
 			metav1.GetOptions{},
 		)
 	}
-	debug.Println(
+	debug.Printf(
 		ctx, "kube.get: %s/%s (non-namespaced resource)",
 		resName, name,
 	)
@@ -275,14 +275,14 @@ func (a *Action) create(
 			if ons == "" {
 				ons = ns
 			}
-			debug.Println(ctx, "kube.create: %s (ns: %s)", resName, ons)
+			debug.Printf(ctx, "kube.create: %s (ns: %s)", resName, ons)
 			obj, err = c.client.Resource(res).Namespace(ons).Create(
 				ctx,
 				obj,
 				metav1.CreateOptions{},
 			)
 		} else {
-			debug.Println(ctx, "kube.create: %s (non-namespaced resource)", resName)
+			debug.Printf(ctx, "kube.create: %s (non-namespaced resource)", resName)
 			obj, err = c.client.Resource(res).Create(
 				ctx,
 				obj,
@@ -348,7 +348,7 @@ func (a *Action) apply(
 			if ons == "" {
 				ons = ns
 			}
-			debug.Println(ctx, "kube.apply: %s (ns: %s)", resName, ons)
+			debug.Printf(ctx, "kube.apply: %s (ns: %s)", resName, ons)
 			obj, err = c.client.Resource(res).Namespace(ns).Apply(
 				ctx,
 				// NOTE(jaypipes): Not sure why a separate name argument is
@@ -362,7 +362,7 @@ func (a *Action) apply(
 				metav1.ApplyOptions{FieldManager: fieldManagerName, Force: true},
 			)
 		} else {
-			debug.Println(ctx, "kube.apply: %s (non-namespaced resource)", resName)
+			debug.Printf(ctx, "kube.apply: %s (non-namespaced resource)", resName)
 			obj, err = c.client.Resource(res).Apply(
 				ctx,
 				// NOTE(jaypipes): Not sure why a separate name argument is
@@ -446,7 +446,7 @@ func (a *Action) doDelete(
 ) error {
 	nameRep := gdtcontext.ReplaceVariables(ctx, name)
 	if name != nameRep {
-		debug.Println(
+		debug.Printf(
 			ctx,
 			"kube.delete: replaced name: %s -> %s",
 			name, nameRep,
@@ -454,7 +454,7 @@ func (a *Action) doDelete(
 	}
 	resName := res.Resource
 	if c.resourceNamespaced(res) {
-		debug.Println(
+		debug.Printf(
 			ctx, "kube.delete: %s/%s (ns: %s)",
 			resName, nameRep, ns,
 		)
@@ -464,7 +464,7 @@ func (a *Action) doDelete(
 			metav1.DeleteOptions{},
 		)
 	}
-	debug.Println(
+	debug.Printf(
 		ctx, "kube.delete: %s/%s (non-namespaced resource)",
 		resName, nameRep,
 	)
@@ -494,7 +494,7 @@ func (a *Action) doDeleteCollection(
 	}
 	resName := res.Resource
 	if c.resourceNamespaced(res) {
-		debug.Println(
+		debug.Printf(
 			ctx, "kube.delete: %s%s (ns: %s)",
 			resName, labelSelString, ns,
 		)
@@ -504,7 +504,7 @@ func (a *Action) doDeleteCollection(
 			opts,
 		)
 	}
-	debug.Println(
+	debug.Printf(
 		ctx, "kube.delete: %s%s (non-namespaced resource)",
 		resName, labelSelString,
 	)

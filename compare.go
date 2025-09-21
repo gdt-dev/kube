@@ -178,7 +178,7 @@ func replaceVariablesInMapEntry(
 ) (string, any) {
 	kRep := gdtcontext.ReplaceVariables(ctx, k)
 	if k != kRep {
-		debug.Println(
+		debug.Printf(
 			ctx,
 			"kube.assert: replaced match key: %s -> %s",
 			k, kRep,
@@ -188,7 +188,7 @@ func replaceVariablesInMapEntry(
 	case string:
 		entryRep := gdtcontext.ReplaceVariables(ctx, entry)
 		if entry != entryRep {
-			debug.Println(
+			debug.Printf(
 				ctx,
 				"kube.assert: replaced match key %s value: %s -> %s",
 				k, entry, entryRep,

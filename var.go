@@ -8,17 +8,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PaesslerAG/jsonpath"
 	"github.com/gdt-dev/core/api"
 	gdtjson "github.com/gdt-dev/core/assertion/json"
 	"github.com/gdt-dev/core/debug"
+	"github.com/theory/jsonpath"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-)
-
-var (
-	// defining the JSONPath language here allows us to disaggregate parse
-	// errors from runtime errors when evaluating a JSONPath expression.
-	lang = jsonpath.Language()
 )
 
 type VarEntry struct {
@@ -48,7 +42,7 @@ func saveVars(
 		if err != nil {
 			return err
 		}
-		debug.Println(ctx, "save.vars: %s -> %v", varName, extracted)
+		debug.Printf(ctx, "save.vars: %s -> %v", varName, extracted)
 		res.SetData(varName, extracted)
 	}
 	return nil
@@ -72,11 +66,16 @@ func extractFrom(path string, out any) (any, error) {
 	default:
 		return nil, fmt.Errorf("unhandled extract type %T", out)
 	}
-	got, err := jsonpath.Get(path, normalized)
+	p, err := jsonpath.Parse(path)
 	if err != nil {
-		// Shouldn't happen since during parse we validate the JSONPath
-		// expression is valid, but double-check anyway.
+		// Not terminal because during parse we validate the JSONPath
+		// expression is valid.
 		return nil, gdtjson.JSONPathNotFound(path, err)
 	}
+	nodes := p.Select(normalized)
+	if len(nodes) == 0 {
+		return nil, gdtjson.JSONPathNotFound(path, err)
+	}
+	got := nodes[0]
 	return got, nil
 }

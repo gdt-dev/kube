@@ -5,13 +5,13 @@
 package kube_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/gdt-dev/core/api"
 	"github.com/gdt-dev/core/parse"
-	"github.com/gdt-dev/core/suite"
-	"github.com/gdt-dev/gdt"
+	"github.com/gdt-dev/core/scenario"
 	gdtkube "github.com/gdt-dev/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,8 +22,11 @@ func TestFailureBadDefaults(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-defaults.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "expected map")
 	assert.Error(err, &parse.Error{})
@@ -35,8 +38,11 @@ func TestFailureDefaultsConfigNotFound(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "defaults-config-not-found.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "specified kube config path")
 	assert.Error(err, &parse.Error{})
@@ -48,8 +54,11 @@ func TestFailureBothShortcutAndKubeSpec(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "shortcut-and-long-kube.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "either specify a full KubeSpec")
 	assert.Error(err, &parse.Error{})
@@ -61,8 +70,11 @@ func TestFailureMoreThanOneKubeAction(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "more-than-one-kube-action.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "you may only specify a single Kubernetes action")
 	assert.Error(err, &parse.Error{})
@@ -74,8 +86,11 @@ func TestFailureInvalidResourceSpecifierNoMultipleResources(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "invalid-resource-specifier-multiple-resources.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "invalid resource specifier")
 	assert.Error(err, &parse.Error{})
@@ -87,8 +102,11 @@ func TestFailureInvalidResourceSpecifierMutipleForwardSlashes(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "invalid-resource-specifier-multiple-forward-slashes.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "invalid resource specifier")
 	assert.Error(err, &parse.Error{})
@@ -100,8 +118,11 @@ func TestFailureInvalidDeleteNotFilepathOrResourceSpecifier(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "invalid-delete-not-filepath-or-resource-specifier.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "invalid resource specifier or filepath")
 	assert.Error(err, &parse.Error{})
@@ -113,8 +134,11 @@ func TestFailureCreateFileNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "create-file-not-found.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "file not found")
 	assert.Error(err, &parse.Error{})
@@ -126,8 +150,11 @@ func TestFailureDeleteFileNotFound(t *testing.T) {
 	assert := assert.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "delete-file-not-found.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "file not found")
 	assert.Error(err, &parse.Error{})
@@ -139,8 +166,11 @@ func TestFailureBadMatchesFileNotFound(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-matches-file-not-found.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "file not found")
 	assert.Error(err, &parse.Error{})
@@ -152,8 +182,11 @@ func TestFailureBadMatchesInvalidYAML(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-matches-invalid-yaml.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "`kube.assert.matches` not well-formed")
 	assert.Error(err, &parse.Error{})
@@ -165,8 +198,11 @@ func TestFailureBadMatchesEmpty(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-matches-empty.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "expected either map[string]interface{} or a string with embedded YAML")
 	assert.Error(err, &parse.Error{})
@@ -178,8 +214,11 @@ func TestFailureBadMatchesNotMapAny(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-matches-not-map-any.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "`kube.assert.matches` not well-formed")
 	assert.Error(err, &parse.Error{})
@@ -191,8 +230,11 @@ func TestFailureBadPlacementNotObject(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-placement-not-object.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "expected map")
 	assert.Error(err, &parse.Error{})
@@ -204,8 +246,11 @@ func TestWithLabelsInvalid(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "with-labels-invalid.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "with labels invalid")
 	assert.Error(err, &parse.Error{})
@@ -217,8 +262,11 @@ func TestFailureBadVarType(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-var-type.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "expected map")
 	assert.Error(err, &parse.Error{})
@@ -230,8 +278,11 @@ func TestFailureBadVarJSONPathNoRoot(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-var-jsonpath-noroot.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "expression must start with")
 	assert.Error(err, &parse.Error{})
@@ -243,8 +294,11 @@ func TestFailureBadVarJSONPath(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "parse", "fail", "bad-var-jsonpath.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.NotNil(err)
 	assert.ErrorContains(err, "JSONPath invalid")
 	assert.Error(err, &parse.Error{})
@@ -258,8 +312,11 @@ func TestParse(t *testing.T) {
 	t.Setenv("pod_name", "foo")
 
 	fp := filepath.Join("testdata", "parse.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.Nil(err)
 	require.NotNil(s)
 
@@ -439,11 +496,8 @@ spec:
 			},
 		},
 	}
-	su := s.(*suite.Suite)
-	require.Len(su.Scenarios, 1)
-	sc := su.Scenarios[0]
-	require.Len(sc.Tests, len(expTests))
-	for x, st := range sc.Tests {
+	require.Len(s.Tests, len(expTests))
+	for x, st := range s.Tests {
 		exp := expTests[x].(*gdtkube.Spec)
 		stk := st.(*gdtkube.Spec)
 		assert.Equal(exp.Kube, stk.Kube)

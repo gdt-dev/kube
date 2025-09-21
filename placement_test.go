@@ -8,11 +8,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
 	gdtcontext "github.com/gdt-dev/core/context"
-	"github.com/gdt-dev/gdt"
+	"github.com/gdt-dev/core/scenario"
 	"github.com/stretchr/testify/require"
 
 	kindfix "github.com/gdt-dev/kube/fixtures/kind"
@@ -24,8 +25,10 @@ func TestPlacementSpread(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "placement-spread.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
 
-	s, err := gdt.From(fp)
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
 	require.Nil(err)
 	require.NotNil(s)
 

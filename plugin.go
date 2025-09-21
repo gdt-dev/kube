@@ -6,7 +6,7 @@ package kube
 
 import (
 	"github.com/gdt-dev/core/api"
-	"github.com/gdt-dev/gdt"
+	gdtplugin "github.com/gdt-dev/core/plugin"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	gdt.RegisterPlugin(Plugin())
+	gdtplugin.Register(Plugin())
 }
 
 const (

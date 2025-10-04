@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gdt-dev/core/api"
@@ -397,12 +398,36 @@ func (a *assertions) jsonOK(ctx context.Context) bool {
 	if exp.JSON != nil && a.hasSubject() {
 		var err error
 		var b []byte
-		res, ok := a.r.(*unstructured.Unstructured)
-		if ok {
-			if b, err = json.Marshal(res); err != nil {
-				panic("unable to marshal unstructured.Unstructured")
+		switch a.r.(type) {
+		case *unstructured.Unstructured:
+			res := a.r.(*unstructured.Unstructured)
+			if b, err = json.Marshal(res.Object); err != nil {
+				fmt.Fprintf(
+					os.Stderr,
+					"unable to marshal unstructured.Unstructured: %s\n",
+					err,
+				)
+				return false
 			}
+		case *unstructured.UnstructuredList:
+			res := a.r.(*unstructured.UnstructuredList)
+			a := make([]any, len(res.Items))
+			for x, item := range res.Items {
+				a[x] = item.Object
+			}
+			if b, err = json.Marshal(a); err != nil {
+				fmt.Fprintf(
+					os.Stderr, "unable to marshal []any: %s\n", err,
+				)
+				return false
+			}
+		default:
+			fmt.Fprintf(
+				os.Stderr, "unsupported type %T for JSON assertion\n", a.r,
+			)
+			return false
 		}
+
 		ja := gdtjson.New(exp.JSON, b)
 		if !ja.OK(ctx) {
 			for _, f := range ja.Failures() {

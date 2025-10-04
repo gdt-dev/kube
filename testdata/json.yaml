@@ -25,6 +25,20 @@ tests:
           $.metadata.uid: uuid4
           $.metadata.creationTimestamp: date-time
 
+  - name: deployment-json-assertions-list
+    timeout:
+      after: 20s
+    kube:
+      get:
+        type: deployments
+        labels:
+          app: nginx
+    assert:
+      len: 1
+      json:
+        paths:
+          $[0].spec.replicas: 2
+
   - name: delete-deployment
     kube:
       delete: deployments/nginx

@@ -54,7 +54,7 @@ func extractFrom(path string, out any) (any, error) {
 	case *unstructured.Unstructured:
 		normalized = out.Object
 	case *unstructured.UnstructuredList:
-		results := make([]map[string]any, len(out.Items))
+		results := make([]any, len(out.Items))
 		for x, item := range out.Items {
 			results[x] = item.Object
 		}

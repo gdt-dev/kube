@@ -75,6 +75,10 @@ type Spec struct {
 	//     having such a label.
 	//   * the string `--all` to delete all resources of that kind.
 	KubeDelete string `yaml:"kube.delete,omitempty"`
+	// Require is an object containing the conditions that the Spec will
+	// assert. If any condition fails, the test scenario execution will stop
+	// and be marked as failed.
+	Require *Expect `yaml:"require,omitempty"`
 	// Assert houses the various assertions to be made about the kube client
 	// call (Create, Apply, Get, etc)
 	// TODO(jaypipes): Make this polymorphic to be either a single assertion

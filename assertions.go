@@ -21,6 +21,9 @@ import (
 
 // Expect contains one or more assertions about a kube client call
 type Expect struct {
+	// Require indicates that any failed assertion should stop the execution of
+	// the test scenario in which the test spec is contained.
+	Require bool `yaml:"require,omitempty"`
 	// Error is a string that is expected to be returned as an error string
 	// from the client call
 	// TODO(jaypipes): Make this polymorphic to be either a shortcut string

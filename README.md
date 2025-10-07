@@ -169,6 +169,10 @@ matches some expectation:
   Kubernetes resource returned in a `kubectl get` response.
 * `assert`: (optional) object containing assertions to make about the
   action performed by the test.
+* `assert.require`: (optional) a boolean indicating whether a failed assertion
+  will cause the test scenario's execution to stop. The default behaviour of
+  `gdt` is to continue execution of subsequent test specs in a test scenario when
+  an assertion fails.
 * `assert.error`: (optional) string to match a returned error from the
   Kubernetes API server.
 * `assert.len`: (optional) int with the expected number of items returned.

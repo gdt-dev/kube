@@ -54,7 +54,14 @@ func (s *Spec) Eval(ctx context.Context) (*api.Result, error) {
 		}
 		return res, nil
 	}
-	return api.NewResult(api.WithFailures(a.Failures()...)), nil
+	stopOnFail := false
+	if s.Assert != nil {
+		stopOnFail = s.Assert.Require
+	}
+	return api.NewResult(
+		api.WithStopOnFail(stopOnFail),
+		api.WithFailures(a.Failures()...),
+	), nil
 }
 
 // cleanupAutoNamespace returns a cleanup function that deletes the

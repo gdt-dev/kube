@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/gdt-dev/core/api"
-	gdtjson "github.com/gdt-dev/core/assertion/json"
 	"github.com/gdt-dev/core/debug"
 	"github.com/theory/jsonpath"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -38,7 +37,7 @@ func saveVars(
 ) error {
 	for varName, entry := range vars {
 		path := entry.From
-		extracted, err := extractFrom(path, out)
+		extracted, err := extractFrom(varName, path, out)
 		if err != nil {
 			return err
 		}
@@ -48,7 +47,11 @@ func saveVars(
 	return nil
 }
 
-func extractFrom(path string, out any) (any, error) {
+func extractFrom(
+	varName string,
+	path string,
+	out any,
+) (any, error) {
 	var normalized any
 	switch out := out.(type) {
 	case *unstructured.Unstructured:
@@ -66,15 +69,16 @@ func extractFrom(path string, out any) (any, error) {
 	default:
 		return nil, fmt.Errorf("unhandled extract type %T", out)
 	}
-	p, err := jsonpath.Parse(path)
-	if err != nil {
-		// Not terminal because during parse we validate the JSONPath
-		// expression is valid.
-		return nil, gdtjson.JSONPathNotFound(path, err)
-	}
+	// Ignore error because during parse we validate the JSONPath expression is
+	// valid.
+	p, _ := jsonpath.Parse(path)
 	nodes := p.Select(normalized)
 	if len(nodes) == 0 {
-		return nil, gdtjson.JSONPathNotFound(path, err)
+		// This IS terminal because it means that the returned results of the
+		// kube.get call did not match the expected JSONPath and that's a
+		// RuntimeError because we cannot continue execution if we don't match
+		// the JSONPath query.
+		return nil, api.JSONPathVarFromNotMatched(varName, path)
 	}
 	got := nodes[0]
 	return got, nil

@@ -4,7 +4,7 @@ go 1.24.3
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/gdt-dev/core v1.10.5
+	github.com/gdt-dev/core v1.11.0
 	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.11.1
 	github.com/theory/jsonpath v0.10.1

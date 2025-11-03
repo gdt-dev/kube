@@ -32,9 +32,37 @@ type kubeDefaults struct {
 	Namespace string `yaml:"namespace,omitempty"`
 }
 
-// Defaults is the known HTTP plugin defaults collection
+// Defaults is the known kube plugin defaults collection
 type Defaults struct {
 	kubeDefaults
+}
+
+// Merge merges the supplies map of key/value combinations with the set of
+// handled defaults for the plugin. The supplied key/value map will NOT be
+// unpacked from its top-most plugin named element. So, for example, the
+// kube plugin should expect to get a map that looks like
+// "kube:namespace:<namespace>" and not "namespace:<namespace>".
+func (d *Defaults) Merge(vals map[string]any) {
+	kubeValsAny, ok := vals[pluginName]
+	if !ok {
+		return
+	}
+	kubeVals, ok := kubeValsAny.(map[string]string)
+	if !ok {
+		return
+	}
+	cfg, ok := kubeVals["config"]
+	if ok {
+		d.Config = cfg
+	}
+	ctx, ok := kubeVals["context"]
+	if ok {
+		d.Context = ctx
+	}
+	ns, ok := kubeVals["namespace"]
+	if ok {
+		d.Namespace = ns
+	}
 }
 
 func (d *Defaults) UnmarshalYAML(node *yaml.Node) error {

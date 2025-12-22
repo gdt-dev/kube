@@ -6,6 +6,8 @@ package kube
 
 import (
 	"path/filepath"
+
+	kubelabels "k8s.io/apimachinery/pkg/labels"
 )
 
 // resourceIdentifierWithSelector is the full long-form resource identifier as
@@ -19,15 +21,22 @@ type resourceIdentifierWithSelector struct {
 	// Labels is a map, keyed by metadata Label, of Label values to select a
 	// resource by
 	Labels map[string]string `yaml:"labels,omitempty"`
+	// LabelsIn is a map, keyed by metadata Label, of slices of string label
+	// values to select a resource with an IN() selector.
+	LabelsIn map[string][]string `yaml:"labels-in,omitempty"`
+	// LabelsNotIn is a map, keyed by metadata Label, of slices of string label
+	// values to select a resource with an NOT IN() selector.
+	LabelsNotIn   map[string][]string `yaml:"labels-not-in,omitempty"`
+	LabelSelector kubelabels.Selector `yaml:"-"`
 }
 
 // ResourceIdentifier is a struct used to parse an interface{} that can be
 // either a string or a struct containing a selector with things like a label
 // key/value map.
 type ResourceIdentifier struct {
-	Arg    string            `yaml:"-"`
-	Name   string            `yaml:"-"`
-	Labels map[string]string `yaml:"-"`
+	Arg           string              `yaml:"-"`
+	Name          string              `yaml:"-"`
+	LabelSelector kubelabels.Selector `yaml:"-"`
 }
 
 // Title returns the resource identifier's kind and name, if present
@@ -42,22 +51,33 @@ func NewResourceIdentifier(
 	arg string,
 	name string,
 	labels map[string]string,
-) *ResourceIdentifier {
-	return &ResourceIdentifier{
-		Arg:    arg,
-		Name:   name,
-		Labels: labels,
+) (*ResourceIdentifier, error) {
+	sel := kubelabels.Everything()
+	if len(labels) > 0 {
+		ls, err := kubelabels.ValidatedSelectorFromSet(labels)
+		if err != nil {
+			return nil, err
+		}
+		sel = ls
 	}
+	ri := &ResourceIdentifier{
+		Arg:  arg,
+		Name: name,
+	}
+	if !sel.Empty() {
+		ri.LabelSelector = sel.DeepCopySelector()
+	}
+	return ri, nil
 }
 
 // ResourceIdentifierOrFile is a struct used to parse an interface{} that can
 // be either a string, a filepath or a struct containing a selector with things
 // like a label key/value map.
 type ResourceIdentifierOrFile struct {
-	fp     string            `yaml:"-"`
-	Arg    string            `yaml:"-"`
-	Name   string            `yaml:"-"`
-	Labels map[string]string `yaml:"-"`
+	fp            string              `yaml:"-"`
+	Arg           string              `yaml:"-"`
+	Name          string              `yaml:"-"`
+	LabelSelector kubelabels.Selector `yaml:"-"`
 }
 
 // FilePath returns the resource identifier's file path, if present
@@ -82,11 +102,22 @@ func NewResourceIdentifierOrFile(
 	arg string,
 	name string,
 	labels map[string]string,
-) *ResourceIdentifierOrFile {
-	return &ResourceIdentifierOrFile{
-		fp:     fp,
-		Arg:    arg,
-		Name:   name,
-		Labels: labels,
+) (*ResourceIdentifierOrFile, error) {
+	sel := kubelabels.Everything()
+	if len(labels) > 0 {
+		ls, err := kubelabels.ValidatedSelectorFromSet(labels)
+		if err != nil {
+			return nil, err
+		}
+		sel = ls
 	}
+	ri := &ResourceIdentifierOrFile{
+		fp:   fp,
+		Arg:  arg,
+		Name: name,
+	}
+	if !sel.Empty() {
+		ri.LabelSelector = sel.DeepCopySelector()
+	}
+	return ri, nil
 }

@@ -151,8 +151,8 @@ matches some expectation:
 * `kube`: (optional) an object containing actions and assertions the test takes
   against the Kubernetes API server.
 * `kube.get`: (optional) string or object containing a resource identifier
-  (e.g.  `pods`, `po/nginx` or label selector for resources that will be read
-  from the Kubernetes API server.
+  (e.g.  `pods`, `po/nginx` or [label selector](#using-label-selectors) for
+  resources that will be read from the Kubernetes API server.
 * `kube.create`: (optional) string containing either a file path to a YAML
   manifest or a string of raw YAML containing the resource(s) to create.
 * `kube.apply`: (optional) string containing either a file path to a YAML
@@ -160,7 +160,7 @@ matches some expectation:
   `gdt-kube` will perform a Kubernetes Apply call.
 * `kube.delete`: (optional) string or object containing either a resource
   identifier (e.g.  `pods`, `po/nginx` , a file path to a YAML manifest, or a
-  label selector for resources that will be deleted.
+  [label selector](#using-label-selectors) for resources that will be deleted.
 * `var`: (optional) an object describing variables that can have
   values saved and referred to by subsequent test specs. Each key in the `var`
   object is the name of the variable to define.
@@ -345,6 +345,88 @@ tests:
   - kube.get: pods/nginx
   # "kube.delete" is a shortcut for the longer object->field format
   - kube.delete: pods/nginx
+```
+
+### Using label selectors
+
+When selecting objects from the Kubernetes API, you can use a label selector in
+the `kube.get` and `kube.delete` test spec actions. This label selector
+functionality is incredibly flexible. You can use a `kubectl`-style label
+selector string, like so:
+
+```yaml
+ - name: select pods that have the "app=argo" label but do NOT have the "app=argo-rollouts" or "app=argorollouts" label
+   kube:
+     get:
+       type: pod
+       labels: app in (argo),app notin (argo-rollouts,argorollouts)
+```
+
+The `kube.get.labels` field can also be a map of string to string, which is
+more aligned with how `gdt`'s YAML syntax is structured. This example selects
+pods that have **both** the `app=myapp` **and** the `region=myregion` label:
+
+```yaml
+ - name: select pods that have BOTH the app=myapp AND region=myregion label
+   kube:
+     get:
+       type: pod
+       labels:
+         app: myapp
+         region: myregion
+```
+
+The `kube.get.labels-in` field is a map of string to slice of strings and gets
+translated into a "label IN (val1, val2)" expression. This example selects pods
+that have **either** the `app=myapp` label **or** the `app=test` label:
+
+```yaml
+ - name: select pods that have EITHER the app=myapp OR app=test label
+   kube:
+     get:
+       type: pod
+       labels-in:
+         app:
+          - myapp
+          - test
+```
+
+The `kube.get.labels-not-in` field is also a map of string to slice of strings
+and gets translated into a `label NOTIN (val1, val2)` expression. This example
+selects pods that **do not** have either the `app=myapp` or the `app=test`
+label.
+
+```yaml
+ - name: select pods that have DON'T HAVE the app=myapp OR app=test label
+   kube:
+     get:
+       type: pod
+       labels-not-in:
+         app:
+          - myapp
+          - test
+```
+
+You can combine the `kube.get.labels`, `kube.get.labels-in` and
+`kube.get.labels-not-in` fields to create complex querying expressions. This
+example selects pods that have the `app=myapp` label **and** have **either**
+the `category=test` or `category=staging` label **and** do **not** have a
+`personal=true` label:
+
+```yaml
+ - name: select pods that have have an app=myapp label AND have either a category=test or category=staging label AND do not have the personal=true label
+   kube:
+     get:
+       type: pod
+       labels:
+         app: myapp
+       labels-in:
+         category:
+          - test
+          - staging
+       labels-not-in:
+         personal:
+          - true
 ```
 
 ### Passing variables to subsequent test specs

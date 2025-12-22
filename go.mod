@@ -4,8 +4,8 @@ go 1.24.3
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/gdt-dev/core v1.11.0
-	github.com/samber/lo v1.51.0
+	github.com/gdt-dev/core v1.12.1
+	github.com/samber/lo v1.52.0
 	github.com/stretchr/testify v1.11.1
 	github.com/theory/jsonpath v0.10.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -18,6 +18,7 @@ require (
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect

@@ -1,0 +1,55 @@
+name: parse-label-selector
+description: a scenario with several well-formed kube/get specs with label selectors
+
+tests:
+
+ - name: label selector, one label only
+   kube:
+     get:
+       type: pod
+       labels:
+         app: nginx
+
+ - name: label selector, multiple labels
+   kube:
+     get:
+       type: pod
+       labels:
+         app: nginx
+         version: 1
+
+ - name: label selector, IN expression
+   kube:
+     get:
+       type: pod
+       labels-in:
+         app:
+           - argorollouts
+           - argo-rollouts
+
+ - name: label selector, NOT IN expression
+   kube:
+     get:
+       type: pod
+       labels-not-in:
+         app:
+           - argorollouts
+           - argo-rollouts
+
+ - name: label selector, AND'ed expression with IN and NOT IN expressions
+   kube:
+     get:
+       type: pod
+       labels-in:
+         app:
+           - argo
+       labels-not-in:
+         app:
+           - argo-rollouts
+           - argorollouts
+
+ - name: label selector, string complex label selector expression 
+   kube:
+     get:
+       type: pod
+       labels: app in (argo),app notin (argo-rollouts,argorollouts)

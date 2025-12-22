@@ -305,6 +305,42 @@ func TestFailureBadVarJSONPath(t *testing.T) {
 	require.Nil(s)
 }
 
+func TestParseLabelSelector(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "parse-label-selector.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	expSelectors := []string{
+		"app=nginx",
+		"app=nginx,version=1",
+		// NOTE(jaypipes): kubelabels.Requirements are sorted alphanumerically,
+		// which is why this is actually different than the order that is
+		// specified in the parse-label-selector.yaml file.
+		"app in (argo-rollouts,argorollouts)",
+		"app notin (argo-rollouts,argorollouts)",
+		"app in (argo),app notin (argo-rollouts,argorollouts)",
+		"app in (argo),app notin (argo-rollouts,argorollouts)",
+	}
+	require.Len(s.Tests, len(expSelectors))
+	for x, st := range s.Tests {
+		expSelector := expSelectors[x]
+		stk := st.(*gdtkube.Spec).Kube
+		get := stk.Get
+		require.NotNil(get)
+		sel := get.LabelSelector
+		require.NotNil(sel)
+		assert.Equal(expSelector, sel.String())
+	}
+}
+
 func TestParse(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -320,6 +356,26 @@ func TestParse(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(s)
 
+	podFileIdent, _ := gdtkube.NewResourceIdentifierOrFile(
+		"manifests/nginx-pod.yaml",
+		"", "", nil,
+	)
+	podNameIdent, _ := gdtkube.NewResourceIdentifier(
+		"pods", "name", nil,
+	)
+	appLabelIdent, _ := gdtkube.NewResourceIdentifier(
+		"pods", "", map[string]string{
+			"app": "nginx",
+		},
+	)
+	podFooIdent, _ := gdtkube.NewResourceIdentifier(
+		"pods", "foo", nil,
+	)
+	podVarSubIdent, _ := gdtkube.NewResourceIdentifier(
+		"pods",
+		"$POD", // $$POD is replaced with $POD after envvar substitution...
+		nil,
+	)
 	podYAML := `apiVersion: v1
 kind: Pod
 metadata:
@@ -376,10 +432,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Delete: gdtkube.NewResourceIdentifierOrFile(
-						"manifests/nginx-pod.yaml",
-						"", "", nil,
-					),
+					Delete: podFileIdent,
 				},
 			},
 		},
@@ -391,9 +444,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "name", nil,
-					),
+					Get: podNameIdent,
 				},
 			},
 		},
@@ -405,9 +456,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "name", nil,
-					),
+					Get: podNameIdent,
 				},
 			},
 		},
@@ -419,11 +468,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "", map[string]string{
-							"app": "nginx",
-						},
-					),
+					Get: appLabelIdent,
 				},
 			},
 		},
@@ -435,11 +480,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "", map[string]string{
-							"app": "nginx",
-						},
-					),
+					Get: appLabelIdent,
 				},
 			},
 		},
@@ -451,9 +492,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "foo", nil,
-					),
+					Get: podFooIdent,
 				},
 			},
 			Assert: &gdtkube.Expect{
@@ -468,9 +507,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods", "name", nil,
-					),
+					Get: podNameIdent,
 				},
 			},
 			Var: gdtkube.Variables{
@@ -487,11 +524,7 @@ spec:
 			},
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
-					Get: gdtkube.NewResourceIdentifier(
-						"pods",
-						"$POD", // $$POD is replaced with $POD after envvar substitution...
-						nil,
-					),
+					Get: podVarSubIdent,
 				},
 			},
 		},

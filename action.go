@@ -19,7 +19,6 @@ import (
 	"github.com/gdt-dev/core/parse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -169,10 +168,10 @@ func (a *Action) doList(
 	resName := res.Resource
 	labelSelString := ""
 	opts := metav1.ListOptions{}
-	withlabels := a.Get.Labels
-	if withlabels != nil {
+	sel := a.Get.LabelSelector
+	if sel != nil {
 		// We already validated the label selector during parse-time
-		labelsStr := labels.Set(withlabels).String()
+		labelsStr := sel.String()
 		labelSelString = fmt.Sprintf(" (labels: %s)", labelsStr)
 		opts.LabelSelector = labelsStr
 	}
@@ -484,11 +483,11 @@ func (a *Action) doDeleteCollection(
 	ns string,
 ) error {
 	opts := metav1.ListOptions{}
-	withlabels := a.Delete.Labels
 	labelSelString := ""
-	if withlabels != nil {
+	sel := a.Delete.LabelSelector
+	if sel != nil {
 		// We already validated the label selector during parse-time
-		labelsStr := labels.Set(withlabels).String()
+		labelsStr := sel.String()
 		labelSelString = fmt.Sprintf(" (labels: %s)", labelsStr)
 		opts.LabelSelector = labelsStr
 	}

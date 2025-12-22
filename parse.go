@@ -16,7 +16,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/theory/jsonpath"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/labels"
+	kubelabels "k8s.io/apimachinery/pkg/labels"
+	kubeselection "k8s.io/apimachinery/pkg/selection"
 )
 
 // EitherShortcutOrKubeSpecAt returns a parse error indicating the test author
@@ -561,13 +562,9 @@ func (r *ResourceIdentifier) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&ri); err != nil {
 		return err
 	}
-	_, err := labels.ValidatedSelectorFromSet(ri.Labels)
-	if err != nil {
-		return InvalidWithLabelsAt(err, node)
-	}
 	r.Arg = ri.Type
 	r.Name = ri.Name
-	r.Labels = ri.Labels
+	r.LabelSelector = ri.LabelSelector
 	return nil
 }
 
@@ -603,13 +600,107 @@ func (r *ResourceIdentifierOrFile) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&ri); err != nil {
 		return err
 	}
-	_, err := labels.ValidatedSelectorFromSet(ri.Labels)
-	if err != nil {
-		return InvalidWithLabelsAt(err, node)
-	}
 	r.Arg = ri.Type
 	r.Name = ri.Name
-	r.Labels = ri.Labels
+	r.LabelSelector = ri.LabelSelector
+	return nil
+}
+
+func (r *resourceIdentifierWithSelector) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return parse.ExpectedMapAt(node)
+	}
+	sel := kubelabels.Everything()
+	// maps/structs are stored in a top-level Node.Content field which is a
+	// concatenated slice of Node pointers in pairs of key/values.
+	for i := 0; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		if keyNode.Kind != yaml.ScalarNode {
+			return parse.ExpectedScalarAt(keyNode)
+		}
+		key := keyNode.Value
+		valNode := node.Content[i+1]
+		switch key {
+		case "type":
+			if valNode.Kind != yaml.ScalarNode {
+				return parse.ExpectedScalarAt(valNode)
+			}
+			r.Type = valNode.Value
+		case "name":
+			if valNode.Kind != yaml.ScalarNode {
+				return parse.ExpectedScalarAt(valNode)
+			}
+			r.Name = valNode.Value
+		case "labels", "labels-all", "labels_all":
+			if valNode.Kind != yaml.ScalarNode && valNode.Kind != yaml.MappingNode {
+				return parse.ExpectedScalarOrMapAt(valNode)
+			}
+			if valNode.Kind == yaml.ScalarNode {
+				s, err := kubelabels.Parse(valNode.Value)
+				if err != nil {
+					return InvalidWithLabelsAt(err, valNode)
+				}
+				// NOTE(jaypipes): If the `labels` key was found and the value
+				// was a string that successfully parsed according to the
+				// kubectl labels selector format, ignore any other
+				// labels-in/labels-not-in keys.
+				r.LabelSelector = s.DeepCopySelector()
+				return nil
+			} else {
+				var m map[string]string
+				if err := valNode.Decode(&m); err != nil {
+					return err
+				}
+				s, err := kubelabels.ValidatedSelectorFromSet(m)
+				if err != nil {
+					return InvalidWithLabelsAt(err, valNode)
+				}
+				newReqs, _ := s.Requirements()
+				for _, req := range newReqs {
+					sel = sel.Add(req)
+				}
+			}
+		case "labels-in", "labels_in", "labels-any", "labels_any":
+			if valNode.Kind != yaml.MappingNode {
+				return parse.ExpectedMapAt(valNode)
+			}
+			var m map[string][]string
+			if err := valNode.Decode(&m); err != nil {
+				return err
+			}
+			for k, vals := range m {
+				req, err := kubelabels.NewRequirement(
+					k, kubeselection.In, vals,
+				)
+				if err != nil {
+					return InvalidWithLabelsAt(err, valNode)
+				}
+				sel = sel.Add(*req)
+			}
+		case "labels-not-in", "labels_not_in", "labels-not-any", "labels_not_any":
+			if valNode.Kind != yaml.MappingNode {
+				return parse.ExpectedMapAt(valNode)
+			}
+			var m map[string][]string
+			if err := valNode.Decode(&m); err != nil {
+				return err
+			}
+			for k, vals := range m {
+				req, err := kubelabels.NewRequirement(
+					k, kubeselection.NotIn, vals,
+				)
+				if err != nil {
+					return InvalidWithLabelsAt(err, valNode)
+				}
+				sel = sel.Add(*req)
+			}
+		default:
+			return parse.UnknownFieldAt(key, keyNode)
+		}
+	}
+	if !sel.Empty() {
+		r.LabelSelector = sel.DeepCopySelector()
+	}
 	return nil
 }
 

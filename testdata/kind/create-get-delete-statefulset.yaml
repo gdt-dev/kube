@@ -1,0 +1,18 @@
+name: create-get-delete-statefulset
+description: test create, get, delete for statefulset
+
+tests:
+  - name: create-statefulset
+    kube:
+      create: ../manifests/nginx-statefulset.yaml
+  - name: statefulset-exists
+    kube:
+      get: statefulsets/nginx-ss
+  - name: delete-statefulset
+    kube:
+      delete: statefulsets/nginx-ss
+  - name: statefulset-no-longer-exists
+    kube:
+      get: statefulsets/nginx-ss
+    assert:
+      notfound: true

@@ -164,6 +164,28 @@ func TestKindPodCreateGetDelete(t *testing.T) {
 	require.Nil(err)
 }
 
+func TestKindStatefulSetCreateGetDelete(t *testing.T) {
+	testutil.SkipIfNoKind(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "kind", "create-get-delete-statefulset.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
+
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
 func TestKindMatches(t *testing.T) {
 	testutil.SkipIfNoKind(t)
 	require := require.New(t)
@@ -291,6 +313,28 @@ func TestKindVarSaveRestore(t *testing.T) {
 	require := require.New(t)
 
 	fp := filepath.Join("testdata", "kind", "var-save-restore.yaml")
+	f, err := os.Open(fp)
+	require.Nil(err)
+	defer f.Close() // nolint:errcheck
+
+	s, err := scenario.FromReader(f, scenario.WithPath(fp))
+	require.Nil(err)
+	require.NotNil(s)
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	ctx := gdtcontext.New(gdtcontext.WithDebug(w))
+	ctx = gdtcontext.RegisterFixture(ctx, "kind", stdKindFix)
+
+	err = s.Run(ctx, t)
+	require.Nil(err)
+}
+
+func TestKindVarPanicIntConversion(t *testing.T) {
+	testutil.SkipIfNoKind(t)
+	require := require.New(t)
+
+	fp := filepath.Join("testdata", "kind", "var-panic-int-conversion.yaml")
 	f, err := os.Open(fp)
 	require.Nil(err)
 	defer f.Close() // nolint:errcheck

@@ -1,0 +1,29 @@
+name: variable-panic-int-conversion
+description: "test for issue gdt-dev/core#72 - panic in ReplaceVariables on int conversion"
+
+tests:
+  - name: create nginx statefulset
+    kube:
+      create: ../manifests/nginx-statefulset.yaml
+
+  # Prior to the fix for gdt-dev/core#72, this test case caused a panic in
+  # gdt-dev/core/context.ReplaceVariables()
+  - name: get nginx statefulset
+    kube.get:
+      type: statefulsets
+      labels:
+        app: nginx
+    require:
+      len: 1
+    var:
+      SS_NAME:
+        from: $[0].metadata.name
+      DESIRED_REPLICAS:
+        from: $[0].spec.replicas
+
+  - name: verify nginx statefulset ready
+    kube.get: statefulsets/$$SS_NAME
+    require:
+      matches:
+        status:
+          readyReplicas: $$DESIRED_REPLICAS

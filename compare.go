@@ -325,11 +325,21 @@ func collectFieldDifferences(
 		return
 	case string:
 		switch subject.(type) {
-		case int, int8, int16, int32, int64,
-			uint, uint8, uint16, uint32, uint64:
+		case int, int8, int16, int32, int64:
 			mv := match.(string)
-			si := subject.(int)
-			sv := strconv.Itoa(si)
+			si := toInt64(subject)
+			sv := strconv.FormatInt(si, 10)
+			if mv != sv {
+				diff := fmt.Sprintf(
+					"%s had different values. expected %v but found %v",
+					fp, match, subject,
+				)
+				delta.Add(diff)
+			}
+		case uint, uint8, uint16, uint32, uint64:
+			mv := match.(string)
+			si := toUint64(subject)
+			sv := strconv.FormatUint(si, 10)
 			if mv != sv {
 				diff := fmt.Sprintf(
 					"%s had different values. expected %v but found %v",

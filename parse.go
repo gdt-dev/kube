@@ -406,7 +406,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 		key := keyNode.Value
 		valNode := node.Content[i+1]
 		switch key {
-		case "require", "stop-on-fail", "stop_on_fail", "stop.on.fail",
+		case "stop-on-fail", "stop_on_fail", "stop.on.fail",
 			"fail-stop", "fail.stop", "fail_stop":
 			if valNode.Kind != yaml.ScalarNode {
 				return parse.ExpectedScalarAt(valNode)
@@ -416,15 +416,15 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 				return parse.ExpectedBoolAt(valNode)
 			}
 			e.Require = req
-		case "error":
-			if valNode.Kind != yaml.ScalarNode {
-				return parse.ExpectedScalarAt(valNode)
+		case "err", "error":
+			if valNode.Kind != yaml.MappingNode {
+				return parse.ExpectedMapAt(valNode)
 			}
-			var v string
-			if err := valNode.Decode(&v); err != nil {
+			var ec *api.ExpectContains
+			if err := valNode.Decode(&ec); err != nil {
 				return err
 			}
-			e.Error = v
+			e.Err = ec
 		case "len":
 			if valNode.Kind != yaml.ScalarNode {
 				return parse.ExpectedScalarAt(valNode)
@@ -472,7 +472,7 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 			e.Conditions = v
 		case "matches":
 			if valNode.Kind == yaml.MappingNode {
-				var v map[string]interface{}
+				var v map[string]any
 				if err := valNode.Decode(&v); err != nil {
 					return err
 				}
@@ -491,8 +491,8 @@ func (e *Expect) UnmarshalYAML(node *yaml.Node) error {
 					}
 				}
 				// inline YAML. check it can be unmarshaled into a
-				// map[string]interface{}
-				var m map[string]interface{}
+				// map[string]any
+				var m map[string]any
 				if err := yaml.Unmarshal([]byte(v), &m); err != nil {
 					return InvalidMatchesUnmarshalErrorAt(err, valNode)
 				}

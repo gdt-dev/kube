@@ -167,22 +167,17 @@ matches some expectation:
 * `var.$VARIABLE_NAME.from`: (required) a JSONPath expression describing where
   the variable with name `$VARIABLE_NAME` should source its value from the
   Kubernetes resource returned in a `kubectl get` response.
-* `assert`: (optional) object containing assertions to make about the
-  action performed by the test.
-* `assert.require`: (optional) a boolean indicating whether a failed assertion
-  will cause the test scenario's execution to stop. The default behaviour of
-  `gdt` is to continue execution of subsequent test specs in a test scenario when
-  an assertion fails.
-* `assert.error`: (optional) string to match a returned error from the
-  Kubernetes API server.
+* `assert`: (optional) object containing assertions to make about the action
+  performed by the test. Failed assertions will not cause the test scenario's
+  execution to stop. To have failed assertions stop the test scenario's
+  execution, use the `require` object.
+* `assert.err`: (optional) an [`ExpectContains`][expectcontains] object containing
+  assertions about a returned error from the Kubernetes client call.
 * `assert.len`: (optional) int with the expected number of items returned.
 * `assert.notfound`: (optional) bool indicating the test author expects
   the Kubernetes API to return a 404/Not Found for a resource.
-* `assert.unknown`: (optional) bool indicating the test author expects the
-  Kubernetes API server to respond that it does not know the type of resource
-  attempting to be fetched or created.
 * `assert.matches`: (optional) a YAML string, a filepath, or a
-  `map[string]interface{}` representing the content that you expect to find in
+  `map[string]any` representing the content that you expect to find in
   the returned result from the `kube.get` call. If `assert.matches` is a
   string, the string can be either a file path to a YAML manifest or
   inline an YAML string containing the resource fields to compare.
@@ -227,6 +222,63 @@ matches some expectation:
 * `assert.json.schema`: (optional) string containing a filepath to a
   JSONSchema document.  If present, the resource's structure will be validated
   against this JSONSChema document.
+* `require`: (optional) object containing assertions to make about the action
+  performed by the test. Failed assertions will cause the test scenario's
+  execution to stop. To have failed assertions not stop the test scenario's
+  execution, use the `assert` object.
+* `require.err`: (optional) an [`ExpectContains`][expectcontains] object containing
+  assertions about a returned error from the Kubernetes client call.
+* `require.len`: (optional) int with the expected number of items returned.
+* `require.notfound`: (optional) bool indicating the test author expects
+  the Kubernetes API to return a 404/Not Found for a resource.
+* `require.matches`: (optional) a YAML string, a filepath, or a
+  `map[string]any` representing the content that you expect to find in
+  the returned result from the `kube.get` call. If `assert.matches` is a
+  string, the string can be either a file path to a YAML manifest or
+  inline an YAML string containing the resource fields to compare.
+  Only fields present in the Matches resource are compared. There is a
+  check for existence in the retrieved resource as well as a check that
+  the value of the fields match. Only scalar fields are matched entirely.
+  In other words, you do not need to specify every field of a struct field
+  in order to compare the value of a single field in the nested struct.
+* `require.conditions`: (optional) a map, keyed by `ConditionType` string,
+  of any of the following:
+  - a string containing the `Status` value that the `Condition` with the
+    `ConditionType` should have.
+  - a list of strings containing the `Status` value that the `Condition` with
+    the `ConditionType` should have.
+  - an object containing two fields:
+    * `status` which itself is either a single string or a list of strings
+      containing the `Status` values that the `Condition` with the
+      `ConditionType` should have
+    * `reason` which is the exact string that should be present in the
+      `Condition` with the `ConditionType`
+* `require.placement`: (optional) an object describing assertions to make about
+  the placement (scheduling outcome) of Pods returned in the `kube.get` result.
+* `require.placement.spread`: (optional) an single string or array of strings
+  for topology keys that the Pods returned in the `kube.get` result should be
+  spread evenly across, e.g. `topology.kubernetes.io/zone` or
+  `kubernetes.io/hostname`.
+* `require.placement.pack`: (optional) an single string or array of strings for
+  topology keys that the Pods returned in the `kube.get` result should be
+  bin-packed within, e.g. `topology.kubernetes.io/zone` or
+  `kubernetes.io/hostname`.
+* `require.json`: (optional) object describing the assertions to make about
+  resource(s) returned from the `kube.get` call to the Kubernetes API server.
+* `require.json.len`: (optional) integer representing the number of bytes in the
+  resulting JSON object after successfully parsing the resource.
+* `require.json.paths`: (optional) map of strings where the keys of the map
+  are JSONPath expressions and the values of the map are the expected value to
+  be found when evaluating the JSONPath expression
+* `require.json.path-formats`: (optional) map of strings where the keys of the map are
+  JSONPath expressions and the values of the map are the expected format of the
+  value to be found when evaluating the JSONPath expression. See the
+  [list of valid format strings](#valid-format-strings)
+* `require.json.schema`: (optional) string containing a filepath to a
+  JSONSchema document.  If present, the resource's structure will be validated
+  against this JSONSChema document.
+
+[expectcontains]: https://github.com/gdt-dev/core/blob/main/api/expect.go
 
 ## Examples
 
@@ -345,6 +397,23 @@ tests:
   - kube.get: pods/nginx
   # "kube.delete" is a shortcut for the longer object->field format
   - kube.delete: pods/nginx
+```
+
+Testing for an expected error string in the response from the Kubernetes API:
+
+```yaml
+name: create-unknown-resource
+description: create with YAML for unknown resource
+tests:
+ - kube:
+     create: |
+       apiVersion: does.not.exist/v1
+       kind: unknown
+       metadata:
+         name: unknown
+   require:
+     err:
+       contains: resource unknown
 ```
 
 ### Using label selectors
@@ -614,7 +683,7 @@ tests:
   - name: get-server-pod-ip
     kube:
       get: pods/server
-    assert:
+    require:
       conditions:
         ready:
           status: true
@@ -659,6 +728,11 @@ tests:
     kube:
       delete: pods/server
 ```
+
+> **IMPORTANT**: Note that we use the `require` object instead of the `assert`
+> object when checking the server's Pod IP. This is deliberate. We do *not*
+> want to attempt to connect to the Pod in the next test unit if the Pod isn't
+> ready.
 
 In the above example, we use a few `gdt-kube` test specs (the ones with `kube:`
 field in the test spec definition) along with an `exec` test spec that executes
@@ -722,7 +796,7 @@ tests:
 ```
 
 In fact, you don't need to use an inline multiline YAML string. You can
-use a `map[string]interface{}` as well:
+use a `map[string]any` as well:
 
 ```yaml
 tests:
@@ -899,7 +973,7 @@ Suppose you have a Deployment resource and you want to write a test that checks
 that a Deployment resource's `Status.ReadyReplicas` field is `2`.
 
 You can specify this expectation using the `assert.json.paths` field,
-which is a `map[string]interface{}` that takes map keys that are JSONPath
+which is a `map[string]any` that takes map keys that are JSONPath
 expressions and map values of what the field at that JSONPath expression should
 contain:
 

@@ -7,7 +7,6 @@ package kube
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,6 +14,9 @@ import (
 
 	"github.com/gdt-dev/core/api"
 	gdtjson "github.com/gdt-dev/core/assertion/json"
+	gdtcontext "github.com/gdt-dev/core/context"
+	"github.com/gdt-dev/core/debug"
+	"github.com/samber/lo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -23,12 +25,10 @@ import (
 type Expect struct {
 	// Require indicates that any failed assertion should stop the execution of
 	// the test scenario in which the test spec is contained.
-	Require bool `yaml:"require,omitempty"`
-	// Error is a string that is expected to be returned as an error string
-	// from the client call
-	// TODO(jaypipes): Make this polymorphic to be either a shortcut string
-	// (like this) or a struct containing individual error assertion fields.
-	Error string `yaml:"error,omitempty"`
+	Require bool `yaml:"-"`
+	// Err has things that are expected in the error string returned from the
+	// client call
+	Err *api.ExpectContains `yaml:"err,omitempty"`
 	// Len is an integer that is expected to represent the number of items in
 	// the response when the Get request was translated into a List operation
 	// (i.e. when the resource specified was a plural kind
@@ -232,7 +232,7 @@ func (a *assertions) OK(ctx context.Context) bool {
 		}
 		return true
 	}
-	if !a.errorOK() {
+	if !a.errorOK(ctx) {
 		return false
 	}
 	if !a.lenOK() {
@@ -255,21 +255,13 @@ func (a *assertions) OK(ctx context.Context) bool {
 
 // errorOK returns true if the supplied error matches the Error conditions,
 // false otherwise.
-func (a *assertions) errorOK() bool {
+func (a *assertions) errorOK(ctx context.Context) bool {
 	exp := a.exp
 	// We first evaluate whether an error we have received should be
 	// "swallowed" because it was expected. If we still have an error after
 	// swallowing all unexpected errors, then that is an unexpected error and
 	// we fail.
 	if a.err != nil {
-		if errors.Is(a.err, ErrResourceUnknown) {
-			if !exp.Unknown {
-				a.Fail(a.err)
-				return false
-			}
-			// "Swallow" the Unknown error since we expected it.
-			a.err = nil
-		}
 		// check if the error is like one returned from Get or Delete
 		// that has a 404 ErrStatus.Code in it
 		apierr, ok := a.err.(*apierrors.StatusError)
@@ -288,15 +280,83 @@ func (a *assertions) errorOK() bool {
 			}
 		}
 	}
-	if exp.Error != "" && a.r != nil {
+	res := true
+	ee := exp.Err
+	if ee != nil {
 		if a.err == nil {
-			a.Fail(api.UnexpectedError(a.err))
+			a.Fail(api.ExpectedError(ee))
 			return false
 		}
-		if !strings.Contains(a.err.Error(), exp.Error) {
-			a.Fail(api.NotIn(a.err.Error(), exp.Error))
-			return false
+		errContents := a.err.Error()
+		if ee.ContainsAll != nil {
+			vals := ee.ContainsAll.Values()
+			vals = lo.Map(vals, func(val string, _ int) string {
+				origVal := val
+				val = gdtcontext.ReplaceVariables(ctx, val)
+				if origVal != val {
+					debug.Printf(
+						ctx,
+						"kube.assert.contains: replaced var: %s -> %s",
+						origVal, val,
+					)
+				}
+				return val
+			})
+			for _, find := range vals {
+				if !strings.Contains(errContents, find) {
+					a.Fail(api.NotIn(find, errContents))
+					res = false
+				}
+			}
 		}
+		if ee.ContainsAny != nil {
+			found := false
+			vals := ee.ContainsAny.Values()
+			vals = lo.Map(vals, func(val string, _ int) string {
+				origVal := val
+				val = gdtcontext.ReplaceVariables(ctx, val)
+				if origVal != val {
+					debug.Printf(
+						ctx,
+						"kube.assert.contains: replaced var: %s -> %s",
+						origVal, val,
+					)
+				}
+				return val
+			})
+			for _, find := range vals {
+				if idx := strings.Index(errContents, find); idx > -1 {
+					found = true
+					break
+				}
+			}
+			if !found {
+				a.Fail(api.NoneIn(vals, errContents))
+				res = false
+			}
+		}
+		if ee.ContainsNone != nil {
+			vals := ee.ContainsNone.Values()
+			vals = lo.Map(vals, func(val string, _ int) string {
+				origVal := val
+				val = gdtcontext.ReplaceVariables(ctx, val)
+				if origVal != val {
+					debug.Printf(
+						ctx,
+						"kube.assert.contains: replaced var: %s -> %s",
+						origVal, val,
+					)
+				}
+				return val
+			})
+			for _, find := range vals {
+				if strings.Contains(errContents, find) {
+					a.Fail(api.In(find, errContents))
+					res = false
+				}
+			}
+		}
+		return res
 	}
 	if a.err != nil {
 		a.Fail(api.UnexpectedError(a.err))

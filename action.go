@@ -94,7 +94,7 @@ func (a *Action) Do(
 	ctx context.Context,
 	c *connection,
 	ns string,
-	out *interface{},
+	out *any,
 ) error {
 	cmd := a.getCommand()
 
@@ -119,7 +119,7 @@ func (a *Action) get(
 	ctx context.Context,
 	c *connection,
 	ns string,
-	out *interface{},
+	out *any,
 ) error {
 	arg := a.Get.Arg
 	argRep := gdtcontext.ReplaceVariables(ctx, arg)
@@ -230,7 +230,7 @@ func (a *Action) create(
 	ctx context.Context,
 	c *connection,
 	ns string,
-	out *interface{},
+	out *any,
 ) error {
 	var err error
 	var r io.Reader
@@ -303,7 +303,7 @@ func (a *Action) apply(
 	ctx context.Context,
 	c *connection,
 	ns string,
-	out *interface{},
+	out *any,
 ) error {
 	var err error
 	var r io.Reader

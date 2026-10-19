@@ -459,6 +459,10 @@ spec:
 					Get: podNameIdent,
 				},
 			},
+			Assert: &gdtkube.Expect{
+				Require:  false,
+				NotFound: true,
+			},
 		},
 		&gdtkube.Spec{
 			Spec: api.Spec{
@@ -469,6 +473,12 @@ spec:
 			Kube: &gdtkube.KubeSpec{
 				Action: gdtkube.Action{
 					Get: appLabelIdent,
+				},
+			},
+			Assert: &gdtkube.Expect{
+				Require: true,
+				Err: &api.ExpectContains{
+					ContainsNone: api.NewFlexStrings("foo", "bar"),
 				},
 			},
 		},

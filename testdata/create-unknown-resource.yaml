@@ -8,4 +8,5 @@ tests:
        metadata:
          name: unknown
    assert:
-     unknown: true
+     err:
+       contains: unknown resource

@@ -15,6 +15,7 @@ tests:
 
  - name: apply a pod from a file using kube.apply shortcut
    kube.apply: manifests/nginx-pod.yaml
+
  - name: create a pod from YAML
    kube:
      create: |
@@ -37,12 +38,19 @@ tests:
  - name: fetch a pod via long-form kube:get
    kube:
      get: pods/name
+   assert:
+     notfound: true
 
  - name: fetch a pod via kube.get shortcut to long-form resource identifier with labels
    kube.get:
      type: pods
      labels:
        app: nginx
+   require:
+     err:
+       contains-none:
+         - foo
+         - bar
 
  - name: fetch a pod via kube:get long-form resource identifier with labels
    kube:

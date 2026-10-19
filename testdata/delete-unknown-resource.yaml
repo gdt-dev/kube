@@ -5,4 +5,5 @@ tests:
  - kube:
      delete: unknown/unknown
    assert:
-     unknown: true
+     err:
+       contains: resource unknown

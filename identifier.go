@@ -30,7 +30,7 @@ type resourceIdentifierWithSelector struct {
 	LabelSelector kubelabels.Selector `yaml:"-"`
 }
 
-// ResourceIdentifier is a struct used to parse an interface{} that can be
+// ResourceIdentifier is a struct used to parse an any that can be
 // either a string or a struct containing a selector with things like a label
 // key/value map.
 type ResourceIdentifier struct {
@@ -70,7 +70,7 @@ func NewResourceIdentifier(
 	return ri, nil
 }
 
-// ResourceIdentifierOrFile is a struct used to parse an interface{} that can
+// ResourceIdentifierOrFile is a struct used to parse an any that can
 // be either a string, a filepath or a struct containing a selector with things
 // like a label key/value map.
 type ResourceIdentifierOrFile struct {

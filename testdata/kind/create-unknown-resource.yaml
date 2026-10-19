@@ -9,5 +9,6 @@ tests:
        kind: unknown
        metadata:
          name: unknown
-   assert:
-     unknown: true
+   require:
+     err:
+       contains: resource unknown

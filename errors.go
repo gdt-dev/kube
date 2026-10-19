@@ -12,9 +12,7 @@ import (
 
 var (
 	// ErrResourceUnknown is returned when an unknown resource kind is
-	// specified for a create/apply/delete target. This is a runtime error
-	// because we rely on the discovery client to determine whether a resource
-	// kind is valid.
+	// specified for a create/apply/delete target.
 	ErrResourceUnknown = fmt.Errorf(
 		"%w: resource unknown",
 		api.ErrFailure,

@@ -1,7 +1,6 @@
 # Go Declarative Testing - Kubernetes
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gdt-dev/kube.svg)](https://pkg.go.dev/github.com/gdt-dev/kube)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gdt-dev/kube)](https://goreportcard.com/report/github.com/gdt-dev/kube)
 [![Build Status](https://github.com/gdt-dev/kube/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gdt-dev/kube/actions)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
